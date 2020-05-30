@@ -1,0 +1,9 @@
+.idea/
+vendor/**/
+cosmoscan-api
+config.json
+backups
+./clickhouse
+./mysql
+.env
+.cache

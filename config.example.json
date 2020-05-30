@@ -1,0 +1,30 @@
+{
+  "api": {
+    "port": "8000",
+    "allowed_hosts": [
+      "http://localhost:8080"
+    ]
+  },
+  "mysql": {
+    "host": "localhost",
+    "port": "3306",
+    "db": "cosmoscan",
+    "user": "root",
+    "password": "secret"
+  },
+  "clickhouse": {
+    "protocol": "http",
+    "host": "localhost",
+    "port": 8123,
+    "user": "default",
+    "password": "",
+    "database": "cosmoshub3"
+  },
+  "parser": {
+    "node": "https://api.cosmos.network",
+    "batch": 500,
+    "fetchers": 5
+  },
+  "ecdsa_private_key_base64": "",
+  "ecdsa_public_key_base64": ""
+}
