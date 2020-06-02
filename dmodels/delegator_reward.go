@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const DelegatorRewardsTable = "rewards"
+const DelegatorRewardsTable = "delegator_rewards"
 
 type DelegatorReward struct {
 	ID        string          `db:"der_id"`

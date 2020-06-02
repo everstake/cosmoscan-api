@@ -25,9 +25,10 @@ type (
 		CreateDelegations(delegations []dmodels.Delegation) error
 		CreateDelegatorRewards(rewards []dmodels.DelegatorReward) error
 		CreateValidatorRewards(rewards []dmodels.ValidatorReward) error
-		CreateProposal(proposals []dmodels.Proposal) error
+		CreateProposals(proposals []dmodels.Proposal) error
 		CreateProposalDeposits(deposits []dmodels.ProposalDeposit) error
 		CreateProposalVotes(votes []dmodels.ProposalVote) error
+		CreateHistoricalStates(states []dmodels.HistoricalState) error
 	}
 
 	daoImpl struct {

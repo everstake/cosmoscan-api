@@ -36,18 +36,21 @@ func (db DB) CreateValidatorRewards(rewards []dmodels.ValidatorReward) error {
 	if len(rewards) == 0 {
 		return nil
 	}
-	q := squirrel.Insert(dmodels.ValidatorRewardsTable).Columns("var_id", "var_address", "var_amount", "var_created_at")
+	q := squirrel.Insert(dmodels.ValidatorRewardsTable).Columns("var_id", "var_tx_hash", "var_address", "var_amount", "var_created_at")
 	for _, reward := range rewards {
 		if reward.ID == "" {
 			return fmt.Errorf("field ID can not be empty")
 		}
-		if reward.Address == "" {
+		if reward.TxHash == "" {
 			return fmt.Errorf("field TxHash can not be empty")
+		}
+		if reward.Address == "" {
+			return fmt.Errorf("field Address can not be empty")
 		}
 		if reward.CreatedAt.IsZero() {
 			return fmt.Errorf("field CreatedAt can not be zero")
 		}
-		q = q.Values(reward.ID, reward.Address, reward.Amount, reward.CreatedAt)
+		q = q.Values(reward.ID, reward.TxHash, reward.Address, reward.Amount, reward.CreatedAt)
 	}
 	return db.Insert(q)
 }

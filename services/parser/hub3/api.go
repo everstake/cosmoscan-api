@@ -86,9 +86,11 @@ type (
 		Txs        []Tx `json:"txs"`
 	}
 	Tx struct {
-		Hash      string    `json:"hash"`
+		Hash      string    `json:"txhash"`
 		Height    uint64    `json:"height,string"`
 		Timestamp time.Time `json:"timestamp"`
+		GasWanted uint64    `json:"gas_wanted,string"`
+		GasUsed   uint64    `json:"gas_used,string"`
 		Logs      []struct {
 			MsgIndex uint64 `json:"msg_index"`
 			Success  bool   `json:"success"`
@@ -107,15 +109,13 @@ type (
 				Memo string `json:"memo"`
 			} `json:"value"`
 		} `json:"tx"`
-		Result struct {
-			Log       string          `json:"log"`
-			GasWanted decimal.Decimal `json:"gas_wanted"`
-			GasUsed   decimal.Decimal `json:"gas_used"`
-			Tags      struct {
+		Events [] struct {
+			Type       string `json:"type"`
+			Attributes [] struct {
 				Key   string `json:"key"`
 				Value string `json:"value"`
-			} `json:"tags"`
-		} `json:"result"`
+			} `json:"attributes"`
+		} `json:"events"`
 	}
 	Amount struct {
 		Denom  string          `json:"denom"`
@@ -169,12 +169,12 @@ type (
 		Proposer       string          `json:"proposer"`
 	}
 	MsgDeposit struct {
-		ProposalID uint64 `json:"proposal_id"`
-		Depositor  string `json:"depositor" `
-		Amount     Amount `json:"amount" `
+		ProposalID uint64   `json:"proposal_id,string"`
+		Depositor  string   `json:"depositor" `
+		Amount     []Amount `json:"amount" `
 	}
 	MsgVote struct {
-		ProposalID uint64 `json:"proposal_id"`
+		ProposalID uint64 `json:"proposal_id,string"`
 		Voter      string `json:"voter"`
 		Option     string `json:"option"`
 	}

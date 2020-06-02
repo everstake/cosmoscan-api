@@ -6,7 +6,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dmodels"
 )
 
-func (db DB) CreateProposal(proposals []dmodels.Proposal) error {
+func (db DB) CreateProposals(proposals []dmodels.Proposal) error {
 	if len(proposals) == 0 {
 		return nil
 	}

@@ -13,7 +13,7 @@ type Transaction struct {
 	Height    uint64          `db:"trn_height"`
 	Messages  uint64          `db:"trn_messages"`
 	Fee       decimal.Decimal `db:"trn_fee"`
-	GasUsed   decimal.Decimal `db:"trn_gas_used"`
-	GasWanted decimal.Decimal `db:"trn_gas_wanted"`
+	GasUsed   uint64          `db:"trn_gas_used"`
+	GasWanted uint64          `db:"trn_gas_wanted"`
 	CreatedAt time.Time       `db:"trn_created_at"`
 }

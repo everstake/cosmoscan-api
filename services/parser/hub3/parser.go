@@ -12,6 +12,7 @@ import (
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/shopspring/decimal"
 	"math"
+	"strings"
 	"sync"
 	"time"
 )
@@ -22,6 +23,9 @@ const parserTitle = "hub3"
 const taskNameBlock = "block"
 const taskNameTxs = "txs"
 const batchTxs = 50
+const precision = 6
+
+var precisionDiv = decimal.New(1, precision)
 
 type (
 	Parser struct {
@@ -52,7 +56,7 @@ type (
 		delegatorRewards []dmodels.DelegatorReward
 		validatorRewards []dmodels.ValidatorReward
 		proposals        []dmodels.Proposal
-		votes            []dmodels.ProposalVote
+		proposalVotes    []dmodels.ProposalVote
 		proposalDeposits []dmodels.ProposalDeposit
 	}
 	task struct {
@@ -219,62 +223,73 @@ func (p *Parser) runWorker() {
 			case taskNameTxs:
 				txs := t.value.(TxsBatch)
 				for _, tx := range txs.Txs {
-					fail := false
-					for _, l := range tx.Logs {
-						if !l.Success {
-							fail = true
+
+					success := true
+					if len(tx.Logs) == 0 {
+						success = false
+					} else {
+						for _, l := range tx.Logs {
+							if !l.Success {
+								success = false
+							}
 						}
 					}
 
 					fee, err := calculateAmount(tx.Tx.Value.Fee.Amount)
 					if err != nil {
-						p.errCh <- fmt.Errorf("height: %d, calculateAmount: %s", tx.Height, err.Error())
+						log.Warn("Parser: height: %d, calculateAmount: %s", tx.Height, err.Error())
+					}
+
+					if tx.Hash == "" {
+						p.errCh <- fmt.Errorf("height: %d, hash empty", tx.Height)
 						return
 					}
 
 					p.data.transactions = append(p.data.transactions, dmodels.Transaction{
 						Hash:      tx.Hash,
-						Status:    !fail,
+						Status:    success,
 						Height:    tx.Height,
 						Messages:  uint64(len(tx.Tx.Value.Msg)),
 						Fee:       fee,
-						GasUsed:   tx.Result.GasUsed,
-						GasWanted: tx.Result.GasWanted,
+						GasUsed:   tx.GasUsed,
+						GasWanted: tx.GasWanted,
 						CreatedAt: tx.Timestamp,
 					})
 
-					for i, msg := range tx.Tx.Value.Msg {
-						switch msg.Type {
-						case SendMsg:
-							err = p.parseMsgSend(i, tx, msg.Value)
-						case MultiSendMsg:
-							err = p.parseMultiSendMsg(i, tx, msg.Value)
-						case DelegateMsg:
-							err = p.parseDelegateMsg(i, tx, msg.Value)
-						case UndelegateMsg:
-							err = p.parseUndelegateMsg(i, tx, msg.Value)
-						case BeginRedelegateMsg:
-							err = p.parseBeginRedelegateMsg(i, tx, msg.Value)
-						case WithdrawDelegationRewardMsg:
-							err = p.parseWithdrawDelegationRewardMsg(i, tx, msg.Value)
-						case WithdrawDelegationRewardsAllMsg:
-							// todo
-							fmt.Println(WithdrawDelegationRewardsAllMsg, tx.Height, string(msg.Value))
-							//err = p.parseWithdrawDelegationRewardsAllMsg(i, tx, msg.Value)
-						case WithdrawValidatorCommissionMsg:
-							// todo
-							fmt.Println(WithdrawDelegationRewardsAllMsg, tx.Height, string(msg.Value))
-							//err = p.parseWithdrawValidatorCommissionMsg(i, tx, msg.Value)
-						case SubmitProposalBaseMsg:
-							err = p.parseSubmitProposalBaseMsg(i, tx, msg.Value)
-						case DepositMsg:
-							err = p.parseDepositMsg(i, tx, msg.Value)
-						case VoteMsg:
-							err = p.parseVoteMsg(i, tx, msg.Value)
-						}
-						if err != nil {
-							p.errCh <- fmt.Errorf("%s, (height: %d): %s", msg.Type, tx.Height, err.Error())
-							return
+					if success {
+						for i, msg := range tx.Tx.Value.Msg {
+							switch msg.Type {
+							case SendMsg:
+								err = p.parseMsgSend(i, tx, msg.Value)
+							case MultiSendMsg:
+								err = p.parseMultiSendMsg(i, tx, msg.Value)
+							case DelegateMsg:
+								err = p.parseDelegateMsg(i, tx, msg.Value)
+							case UndelegateMsg:
+								err = p.parseUndelegateMsg(i, tx, msg.Value)
+							case BeginRedelegateMsg:
+								err = p.parseBeginRedelegateMsg(i, tx, msg.Value)
+							case WithdrawDelegationRewardMsg:
+								err = p.parseWithdrawDelegationRewardMsg(i, tx, msg.Value)
+							case WithdrawDelegationRewardsAllMsg:
+								// todo
+								fmt.Println(WithdrawDelegationRewardsAllMsg, tx.Height, string(msg.Value))
+								//err = p.parseWithdrawDelegationRewardsAllMsg(i, tx, msg.Value)
+							case WithdrawValidatorCommissionMsg:
+								err = p.parseWithdrawValidatorCommissionMsg(i, tx, msg.Value)
+							case SubmitProposalBaseMsg:
+								// todo
+								fmt.Println(SubmitProposalBaseMsg, tx.Height, string(msg.Value))
+								err = p.parseSubmitProposalBaseMsg(i, tx, msg.Value)
+							case DepositMsg:
+								err = p.parseDepositMsg(i, tx, msg.Value)
+							case VoteMsg:
+								err = p.parseVoteMsg(i, tx, msg.Value)
+							}
+							if err != nil {
+								p.errCh <- fmt.Errorf("%s, (height: %d): %s", msg.Type, tx.Height, err.Error())
+								return
+							}
 						}
 					}
 
@@ -436,15 +451,37 @@ func (p *Parser) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte)
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
-	// todo amount5
+
+	mp := make(map[string]decimal.Decimal)
+	for _, event := range tx.Events {
+		if event.Type == "withdraw_rewards" {
+			for i := 0; i < len(event.Attributes); i += 2 {
+				amount, err := strToAmount(event.Attributes[i].Value)
+				if err != nil {
+					return fmt.Errorf("strToAmount: %s", err.Error())
+				}
+				if event.Attributes[i+1].Key != "validator" {
+					return fmt.Errorf("not found validator in events")
+				}
+				mp[event.Attributes[i+1].Value] = amount
+			}
+			break
+		}
+	}
+
+	amount, ok := mp[m.ValidatorAddress]
+	if !ok {
+		return fmt.Errorf("not found validator %s in map", m.ValidatorAddress)
+	}
+
 	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
 	p.data.delegatorRewards = append(p.data.delegatorRewards, dmodels.DelegatorReward{
 		ID:        id,
-		TxHash:    "",
-		Delegator: "",
-		Validator: "",
-		Amount:    decimal.Decimal{},
-		CreatedAt: time.Time{},
+		TxHash:    tx.Hash,
+		Delegator: m.DelegatorAddress,
+		Validator: m.ValidatorAddress,
+		Amount:    amount,
+		CreatedAt: tx.Timestamp,
 	})
 	return nil
 }
@@ -477,7 +514,7 @@ func (p *Parser) parseVoteMsg(index int, tx Tx, data []byte) (err error) {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
 	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
-	p.data.votes = append(p.data.votes, dmodels.ProposalVote{
+	p.data.proposalVotes = append(p.data.proposalVotes, dmodels.ProposalVote{
 		ID:         id,
 		ProposalID: m.ProposalID,
 		Voter:      m.Voter,
@@ -493,10 +530,15 @@ func (p *Parser) parseDepositMsg(index int, tx Tx, data []byte) (err error) {
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
-	amount, err := m.Amount.getAmount()
-	if err != nil {
-		return fmt.Errorf("getAmount: %s", err.Error())
+	amount := decimal.Zero
+	for _, a := range m.Amount {
+		amt, err := a.getAmount()
+		if err != nil {
+			return fmt.Errorf("getAmount: %s", err.Error())
+		}
+		amount = amount.Add(amt)
 	}
+
 	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
 	p.data.proposalDeposits = append(p.data.proposalDeposits, dmodels.ProposalDeposit{
 		ID:         id,
@@ -527,22 +569,41 @@ func (p *Parser) parseDepositMsg(index int, tx Tx, data []byte) (err error) {
 //	return nil
 //}
 
-//func (p *Parser) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte) (err error) {
-//	var m MsgWithdrawValidatorCommission
-//	err = json.Unmarshal(data, &m)
-//	if err != nil {
-//		return fmt.Errorf("json.Unmarshal: %s", err.Error())
-//	}
-//	// todo amount
-//	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
-//	p.data.validatorRewards = append(p.data.validatorRewards, dmodels.ValidatorReward{
-//		ID:        id,
-//		Address:   m.ValidatorAddress,
-//		Amount:    ?,
-//		CreatedAt:  tx.Timestamp,
-//	})
-//	return nil
-//}
+func (p *Parser) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte) (err error) {
+	var m MsgWithdrawValidatorCommission
+	err = json.Unmarshal(data, &m)
+	if err != nil {
+		return fmt.Errorf("json.Unmarshal: %s", err.Error())
+	}
+	var amount decimal.Decimal
+	found := false
+	for _, event := range tx.Events {
+		if event.Type == "withdraw_commission" {
+			for _, att := range event.Attributes {
+				if att.Key == "amount" {
+					val := strings.TrimSuffix(att.Value, "uatom")
+					amount, err = decimal.NewFromString(val)
+					if err != nil {
+						return fmt.Errorf("decimal.NewFromString: %s", err.Error())
+					}
+					found = true
+				}
+			}
+		}
+	}
+	if !found {
+		return fmt.Errorf("amount not found")
+	}
+	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
+	p.data.validatorRewards = append(p.data.validatorRewards, dmodels.ValidatorReward{
+		TxHash:    tx.Hash,
+		ID:        id,
+		Address:   m.ValidatorAddress,
+		Amount:    amount,
+		CreatedAt: tx.Timestamp,
+	})
+	return nil
+}
 
 func (p *Parser) runSaver(model dmodels.Parser) {
 	height := model.Height
@@ -555,6 +616,70 @@ func (p *Parser) runSaver(model dmodels.Parser) {
 				break
 			}
 			log.Error("Parser: dao.CreateBlocks: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateTransactions(data.transactions)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateTransactions: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateTransfers(data.transfers)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateTransfers: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateDelegations(data.delegations)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateDelegations: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateDelegatorRewards(data.delegatorRewards)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateDelegatorRewards: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateValidatorRewards(data.validatorRewards)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateValidatorRewards: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateProposals(data.proposals)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateProposals: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateProposalDeposits(data.proposalDeposits)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateProposalDeposits: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateProposalVotes(data.proposalVotes)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateProposalVotes: %s", err.Error())
 			<-time.After(repeatDelay)
 		}
 		for {
@@ -594,7 +719,21 @@ func (a Amount) getAmount() (decimal.Decimal, error) {
 	if a.Denom != "uatom" {
 		return decimal.Zero, fmt.Errorf("unknown demon (currency): %s", a.Denom)
 	}
+	a.Amount = a.Amount.Div(precisionDiv)
 	return a.Amount, nil
+}
+
+func strToAmount(str string) (decimal.Decimal, error) {
+	if str == "" {
+		return decimal.Zero, nil
+	}
+	val := strings.TrimSuffix(str, "uatom")
+	amount, err := decimal.NewFromString(val)
+	if err != nil {
+		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())
+	}
+	amount = amount.Div(precisionDiv)
+	return amount, nil
 }
 
 func makeHash(str string) string {
