@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
+	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/everstake/cosmoscan-api/services"
 	"github.com/gorilla/mux"
@@ -12,34 +13,39 @@ import (
 	"github.com/rs/cors"
 	"github.com/urfave/negroni"
 	"net/http"
+	"reflect"
+	"strconv"
+	"time"
 )
 
 type API struct {
 	dao          dao.DAO
 	cfg          config.Config
+	svc          services.Services
 	router       *mux.Router
 	queryDecoder *schema.Decoder
 }
 
 type errResponse struct {
 	Error string `json:"error"`
-	Value string `json:"value"`
+	Msg   string `json:"msg"`
 }
 
 func NewAPI(cfg config.Config, svc services.Services, dao dao.DAO) *API {
 	sd := schema.NewDecoder()
 	sd.IgnoreUnknownKeys(true)
-	//sd.RegisterConverter(dmodels.Time{}, func(s string) reflect.Value {
-	//	timestamp, err := strconv.ParseInt(s, 10, 64)
-	//	if err != nil {
-	//		return reflect.Value{}
-	//	}
-	//	t := dmodels.NewTime(time.Unix(timestamp, 0))
-	//	return reflect.ValueOf(t)
-	//})
+	sd.RegisterConverter(dmodels.Time{}, func(s string) reflect.Value {
+		timestamp, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return reflect.Value{}
+		}
+		t := dmodels.NewTime(time.Unix(timestamp, 0))
+		return reflect.ValueOf(t)
+	})
 	return &API{
 		cfg:          cfg,
 		dao:          dao,
+		svc:          svc,
 		queryDecoder: sd,
 	}
 }
@@ -80,7 +86,13 @@ func (api *API) loadRoutes() {
 
 	// public
 	HandleActions(api.router, wrapper, "", []*Route{
+		{Path: "/", Method: http.MethodGet, Func: api.Index},
+		{Path: "/health", Method: http.MethodGet, Func: api.Health},
 
+		{Path: "/meta", Method: http.MethodGet, Func: api.GetMetaData},
+		{Path: "/historical-state", Method: http.MethodGet, Func: api.GetHistoricalState},
+		{Path: "/transactions/fee/agg", Method: http.MethodGet, Func: api.GetAggTransactionsFee},
+		{Path: "/transfers/volume/agg", Method: http.MethodGet, Func: api.GetAggTransfersVolume},
 	})
 
 }
@@ -96,16 +108,30 @@ func jsonData(writer http.ResponseWriter, data interface{}) {
 	writer.Write(bytes)
 }
 
-//func jsonError(writer http.ResponseWriter, err error) {
-//	sErr, ok := err.(tp.Err)
-//	if ok {
-//		jsonData(writer, errResponse{
-//			Error: sErr.Code,
-//			Value: sErr.Value,
-//		})
-//		return
-//	}
-//	jsonData(writer, errResponse{
-//		Error: serrors.ErrService,
-//	})
-//}
+func jsonError(writer http.ResponseWriter) {
+	writer.WriteHeader(500)
+	bytes, err := json.Marshal(errResponse{
+		Error: "service error",
+	})
+	if err != nil {
+		writer.Write([]byte("can`t marshal json"))
+		return
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Write(bytes)
+}
+
+func jsonBadRequest(writer http.ResponseWriter, msg string) {
+	bytes, err := json.Marshal(errResponse{
+		Error: "bad request",
+		Msg:   msg,
+	})
+	if err != nil {
+		writer.WriteHeader(500)
+		writer.Write([]byte("can`t marshal json"))
+		return
+	}
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(400)
+	writer.Write(bytes)
+}

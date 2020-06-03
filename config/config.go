@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	configPath = "./config.json"
-	Currency   = "atom"
+	ServiceName = "cosmoscan-api"
+	configPath  = "./config.json"
+	Currency    = "atom"
 )
 
 type (

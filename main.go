@@ -11,16 +11,10 @@ import (
 	"github.com/everstake/cosmoscan-api/services/scheduler"
 	"os"
 	"os/signal"
+	"time"
 )
 
 func main() {
-	//address, err := types.ValAddressFromHex("679B89785973BE94D4FDF8B66F84A929932E91C5")
-	//if err != nil {
-	//	fmt.Print(err)
-	//}
-	//fmt.Println(address.String())
-	//return
-
 	err := os.Setenv("TZ", "UTC")
 	if err != nil {
 		log.Fatal("os.Setenv (TZ): %s", err.Error())
@@ -37,11 +31,16 @@ func main() {
 		log.Fatal("services.NewServices: %s", err.Error())
 	}
 
+	// todo empty block ID
 	prs := hub3.NewParser(cfg, d)
 
 	apiServer := api.NewAPI(cfg, s, d)
 
 	sch := scheduler.NewScheduler()
+
+	sch.AddProcessWithInterval(s.UpdateValidatorsMap, time.Minute*10)
+
+	go s.KeepHistoricalState()
 
 	g := modules.NewGroup(apiServer, sch, prs)
 	g.Run()

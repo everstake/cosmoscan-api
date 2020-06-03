@@ -3,7 +3,9 @@ package clickhouse
 import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
+	"github.com/everstake/cosmoscan-api/smodels"
 )
 
 func (db DB) CreateTransactions(transactions []dmodels.Transaction) error {
@@ -42,4 +44,24 @@ func (db DB) CreateTransactions(transactions []dmodels.Transaction) error {
 		)
 	}
 	return db.Insert(q)
+}
+
+func (db DB) GetAggTransactionsFee(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := squirrel.Select(
+		"sum(trn_fee) AS value",
+		fmt.Sprintf("toDateTime(%s(trn_created_at)) AS time", filter.AggFunc()),
+	).From(dmodels.TransactionsTable).
+		GroupBy("time").
+		OrderBy("time")
+	if !filter.From.IsZero() {
+		q = q.Where(squirrel.GtOrEq{"trn_created_at": filter.From.Time})
+	}
+	if !filter.To.IsZero() {
+		q = q.Where(squirrel.LtOrEq{"trn_created_at": filter.To.Time})
+	}
+	err = db.Find(&items, q)
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
 }

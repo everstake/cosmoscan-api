@@ -3,7 +3,9 @@ package clickhouse
 import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
+	"github.com/everstake/cosmoscan-api/smodels"
 )
 
 func (db DB) CreateTransfers(transfers []dmodels.Transfer) error {
@@ -24,4 +26,25 @@ func (db DB) CreateTransfers(transfers []dmodels.Transfer) error {
 		q = q.Values(transfer.ID, transfer.TxHash, transfer.From, transfer.To, transfer.Amount, transfer.CreatedAt)
 	}
 	return db.Insert(q)
+}
+
+func (db DB) GetAggTransfersVolume(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := squirrel.Select(
+		"sum(trf_amount) AS value",
+		fmt.Sprintf("toDateTime(%s(trf_created_at)) AS time", filter.AggFunc()),
+	).From(dmodels.TransfersTable).
+		Where("notEmpty(trf_from)").
+		GroupBy("time").
+		OrderBy("time")
+	if !filter.From.IsZero() {
+		q = q.Where(squirrel.GtOrEq{"trf_created_at": filter.From.Time})
+	}
+	if !filter.To.IsZero() {
+		q = q.Where(squirrel.LtOrEq{"trf_created_at": filter.To.Time})
+	}
+	err = db.Find(&items, q)
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
 }

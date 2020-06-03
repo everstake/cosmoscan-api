@@ -7,3 +7,4 @@ backups
 ./mysql
 .env
 .cache
+docker-compose.yml

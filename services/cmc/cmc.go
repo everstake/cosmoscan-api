@@ -16,10 +16,18 @@ type (
 		cfg    config.Config
 		client *http.Client
 	}
+	CurrenciesResponse struct {
+		Status struct {
+			ErrorCode    int    `json:"error_code"`
+			ErrorMessage string `json:"error_message,omitempty"`
+		} `json:"status"`
+		Data []Currency `json:"data"`
+	}
 	Currency struct {
-		CirculationSupply decimal.Decimal `json:"circulation_supply"`
+		CirculatingSupply decimal.Decimal `json:"circulating_supply"`
 		CMCRank           int             `json:"cmc_rank"`
 		TotalSupply       decimal.Decimal `json:"total_supply"`
+		Symbol            string          `json:"symbol"`
 		Quote             map[string]struct {
 			MarketCap        decimal.Decimal `json:"market_cap"`
 			PercentChange1h  decimal.Decimal `json:"percent_change_1h"`
@@ -62,6 +70,10 @@ func (cmc *CMC) request(endpoint string, data interface{}) error {
 }
 
 func (cmc *CMC) GetCurrencies() (currencies []Currency, err error) {
-	err = cmc.request("/v1/cryptocurrency/listings/latest", &currencies)
-	return currencies, err
+	var currencyResp CurrenciesResponse
+	err = cmc.request("/v1/cryptocurrency/listings/latest", &currencyResp)
+	if currencyResp.Status.ErrorCode != 0 {
+		return nil, fmt.Errorf("error code: %d, msg: %s", currencyResp.Status.ErrorCode, currencyResp.Status.ErrorMessage)
+	}
+	return currencyResp.Data, err
 }

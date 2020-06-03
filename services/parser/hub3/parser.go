@@ -203,7 +203,7 @@ func (p *Parser) runWorker() {
 				p.data.blocks = append(p.data.blocks, dmodels.Block{
 					ID:        block.Block.Header.Height,
 					Hash:      block.BlockMeta.BlockID.Hash,
-					Proposer:  "test",
+					Proposer:  block.BlockMeta.Header.ProposerAddress,
 					CreatedAt: block.BlockMeta.Header.Time,
 				})
 				totalTxs += block.BlockMeta.Header.NumTxs
@@ -581,10 +581,9 @@ func (p *Parser) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []by
 		if event.Type == "withdraw_commission" {
 			for _, att := range event.Attributes {
 				if att.Key == "amount" {
-					val := strings.TrimSuffix(att.Value, "uatom")
-					amount, err = decimal.NewFromString(val)
+					amount, err = strToAmount(att.Value)
 					if err != nil {
-						return fmt.Errorf("decimal.NewFromString: %s", err.Error())
+						return fmt.Errorf("strToAmount: %s", err.Error())
 					}
 					found = true
 				}
@@ -709,6 +708,7 @@ func calculateAmount(amountItems []Amount) (decimal.Decimal, error) {
 		}
 		volume = volume.Add(item.Amount)
 	}
+	volume = volume.Div(precisionDiv)
 	return volume, nil
 }
 

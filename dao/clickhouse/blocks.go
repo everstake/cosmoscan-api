@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 )
 
@@ -27,4 +28,16 @@ func (db DB) CreateBlocks(blocks []dmodels.Block) error {
 		q = q.Values(block.ID, block.Hash, block.Proposer, block.CreatedAt)
 	}
 	return db.Insert(q)
+}
+
+func (db DB) GetBlocks(filter filters.Blocks) (blocks []dmodels.Block, err error) {
+	q := squirrel.Select("*").From(dmodels.BlocksTable).OrderBy("blk_id desc")
+	if filter.Limit != 0 {
+		q = q.Limit(filter.Limit)
+	}
+	if filter.Offset != 0 {
+		q = q.Offset(filter.Offset)
+	}
+	err = db.Find(&blocks, q)
+	return blocks, nil
 }

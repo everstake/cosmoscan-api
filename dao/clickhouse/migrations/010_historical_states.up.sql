@@ -2,7 +2,7 @@ create table historical_states
 (
     his_price              Decimal(18, 8) default 0,
     his_market_cap         Decimal(18, 2) default 0,
-    his_circulation_supply Decimal(18, 2) default 0,
+    his_circulating_supply Decimal(18, 2) default 0,
     his_trading_volume     Decimal(18, 2) default 0,
     his_staked_ratio       Decimal(4, 2)  default 0,
     his_inflation_rate     Decimal(4, 2)  default 0,

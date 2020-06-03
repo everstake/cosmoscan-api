@@ -11,8 +11,10 @@ require (
 	github.com/gorilla/schema v1.1.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mailru/go-clickhouse v1.3.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rs/cors v1.7.0
 	github.com/rubenv/sql-migrate v0.0.0-20200429072036-ae26b214fa43
 	github.com/shopspring/decimal v1.2.0
+	github.com/tendermint/tendermint v0.33.3
 	github.com/urfave/negroni v1.0.0
 )
