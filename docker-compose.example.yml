@@ -5,7 +5,7 @@ services:
     ports:
       - "6000:6000"
     container_name: cosmoscan-api
-    build: docker/go
+    build: .
     volumes:
       - ./:/cosmoscan-api
       - ~/.ssh:/root/.ssh

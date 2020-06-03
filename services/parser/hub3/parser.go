@@ -12,6 +12,7 @@ import (
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/shopspring/decimal"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -158,6 +159,13 @@ func (p *Parser) runFetchers() {
 						for {
 							task.value, err = p.api.GetBlock(task.height)
 							if err == nil {
+
+								// todo delete
+								b := task.value.(Block)
+								if b.Block.Header.Height == 0 {
+									log.Error("!!!! empty height in block %d", b.Block.Header.Height)
+								}
+
 								p.workerCh <- task
 								break
 							}
@@ -271,16 +279,10 @@ func (p *Parser) runWorker() {
 								err = p.parseBeginRedelegateMsg(i, tx, msg.Value)
 							case WithdrawDelegationRewardMsg:
 								err = p.parseWithdrawDelegationRewardMsg(i, tx, msg.Value)
-							case WithdrawDelegationRewardsAllMsg:
-								// todo
-								fmt.Println(WithdrawDelegationRewardsAllMsg, tx.Height, string(msg.Value))
-								//err = p.parseWithdrawDelegationRewardsAllMsg(i, tx, msg.Value)
 							case WithdrawValidatorCommissionMsg:
 								err = p.parseWithdrawValidatorCommissionMsg(i, tx, msg.Value)
-							case SubmitProposalBaseMsg:
-								// todo
-								fmt.Println(SubmitProposalBaseMsg, tx.Height, string(msg.Value))
-								err = p.parseSubmitProposalBaseMsg(i, tx, msg.Value)
+							case SubmitProposalMsg:
+								err = p.parseSubmitProposalMsg(i, tx, msg.Value)
 							case DepositMsg:
 								err = p.parseDepositMsg(i, tx, msg.Value)
 							case VoteMsg:
@@ -486,22 +488,44 @@ func (p *Parser) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte)
 	return nil
 }
 
-func (p *Parser) parseSubmitProposalBaseMsg(index int, tx Tx, data []byte) (err error) {
-	var m MsgSubmitProposalBase
+func (p *Parser) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error) {
+	var m MsgSubmitProposal
 	err = json.Unmarshal(data, &m)
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
-	amount, err := m.InitialDeposit.getAmount()
-	if err != nil {
-		return fmt.Errorf("InitialDeposit.getAmount: %s", err.Error())
+	var id uint64
+	for _, event := range tx.Events {
+		if event.Type == "submit_proposal" {
+			for _, att := range event.Attributes {
+				if att.Key == "proposal_id" {
+					id, err = strconv.ParseUint(att.Value, 10, 64)
+					if err != nil {
+						return fmt.Errorf("strconv.ParseUint: %s", err.Error())
+					}
+				}
+			}
+		}
 	}
-	// todo PROPOSAL_ID
+	if id == 0 {
+		return fmt.Errorf("not found proposal_id")
+	}
+	amount, err := calculateAmount(m.Content.Value.Amount)
+	if err != nil {
+		return fmt.Errorf("calculateAmount: %s", err.Error())
+	}
+	initDeposit, err := calculateAmount(m.InitialDeposit)
+	if err != nil {
+		return fmt.Errorf("calculateAmount: %s", err.Error())
+	}
 	p.data.proposals = append(p.data.proposals, dmodels.Proposal{
-		ID:          tx.Hash,
-		InitDeposit: amount,
+		ID:          id,
+		Title:       m.Content.Value.Title,
+		Description: m.Content.Value.Description,
+		Recipient:   m.Content.Value.Recipient,
+		Amount:      amount,
+		InitDeposit: initDeposit,
 		Proposer:    m.Proposer,
-		Content:     string(m.Content),
 		CreatedAt:   tx.Timestamp,
 	})
 	return nil
@@ -549,25 +573,6 @@ func (p *Parser) parseDepositMsg(index int, tx Tx, data []byte) (err error) {
 	})
 	return nil
 }
-
-//func (p *Parser) parseWithdrawDelegationRewardsAllMsg(index int, tx Tx, data []byte) (err error) {
-//	var m MsgWithdrawDelegationRewardsAll
-//	err = json.Unmarshal(data, &m)
-//	if err != nil {
-//		return fmt.Errorf("json.Unmarshal: %s", err.Error())
-//	}
-//	// TODO
-//	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
-//	p.data.delegatorRewards = append(p.data.delegatorRewards, dmodels.DelegatorReward{
-//		ID:        "",
-//		TxHash:    "",
-//		Delegator: "",
-//		Validator: "",
-//		Amount:    decimal.Decimal{},
-//		CreatedAt: time.Time{},
-//	})
-//	return nil
-//}
 
 func (p *Parser) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte) (err error) {
 	var m MsgWithdrawValidatorCommission

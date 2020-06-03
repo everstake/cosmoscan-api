@@ -19,7 +19,7 @@ const (
 	WithdrawDelegationRewardMsg     = "cosmos-sdk/MsgWithdrawDelegationReward"
 	WithdrawDelegationRewardsAllMsg = "cosmos-sdk/MsgWithdrawDelegationRewardsAll"
 	WithdrawValidatorCommissionMsg  = "cosmos-sdk/MsgWithdrawValidatorCommission"
-	SubmitProposalBaseMsg           = "cosmos-sdk/MsgSubmitProposalBase"
+	SubmitProposalMsg               = "cosmos-sdk/MsgSubmitProposal"
 	DepositMsg                      = "cosmos-sdk/MsgDeposit"
 	VoteMsg                         = "cosmos-sdk/MsgVote"
 )
@@ -163,10 +163,18 @@ type (
 	MsgWithdrawValidatorCommission struct {
 		ValidatorAddress string `json:"validator_address"`
 	}
-	MsgSubmitProposalBase struct {
-		Content        json.RawMessage `json:"content"`
-		InitialDeposit Amount          `json:"initial_deposit"`
-		Proposer       string          `json:"proposer"`
+	MsgSubmitProposal struct {
+		Content struct {
+			Type  string `json:"type"`
+			Value struct {
+				Title       string   `json:"title"`
+				Description string   `json:"description"`
+				Recipient   string   `json:"recipient"`
+				Amount      []Amount `json:"amount"`
+			} `json:"value"`
+		} `json:"content"`
+		InitialDeposit []Amount `json:"initial_deposit"`
+		Proposer       string   `json:"proposer"`
 	}
 	MsgDeposit struct {
 		ProposalID uint64   `json:"proposal_id,string"`

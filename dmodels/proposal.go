@@ -8,9 +8,12 @@ import (
 const ProposalsTable = "proposals"
 
 type Proposal struct {
-	ID          string          `db:"pro_id"`
+	ID          uint64          `db:"pro_id"`
+	Title       string          `db:"pro_title"`
+	Description string          `db:"pro_description"`
+	Recipient   string          `db:"pro_recipient"`
+	Amount      decimal.Decimal `db:"pro_amount"`
 	InitDeposit decimal.Decimal `db:"pro_init_deposit"`
 	Proposer    string          `db:"pro_proposer"`
-	Content     string          `db:"pro_content"`
 	CreatedAt   time.Time       `db:"pro_created_at"`
 }
