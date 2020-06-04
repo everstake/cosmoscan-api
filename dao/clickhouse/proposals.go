@@ -43,7 +43,7 @@ func (db DB) CreateProposals(proposals []dmodels.Proposal) error {
 }
 
 func (db DB) GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal, err error) {
-	q := squirrel.Select("*").From(dmodels.HistoricalStates).OrderBy("pro_created_at desc")
+	q := squirrel.Select("*").From(dmodels.ProposalsTable).OrderBy("pro_created_at desc")
 	if filter.Limit != 0 {
 		q = q.Limit(filter.Limit)
 	}
