@@ -41,13 +41,13 @@ func (db DB) CreateHistoricalStates(states []dmodels.HistoricalState) error {
 	return db.Insert(q)
 }
 
-func (db DB) GetHistoricalStates(state filters.HistoricalState) (states []dmodels.HistoricalState, err error) {
+func (db DB) GetHistoricalStates(filter filters.HistoricalState) (states []dmodels.HistoricalState, err error) {
 	q := squirrel.Select("*").From(dmodels.HistoricalStates).OrderBy("his_created_at desc")
-	if state.Limit != 0 {
-		q = q.Limit(state.Limit)
+	if filter.Limit != 0 {
+		q = q.Limit(filter.Limit)
 	}
-	if state.Offset != 0 {
-		q = q.Limit(state.Offset)
+	if filter.Offset != 0 {
+		q = q.Limit(filter.Offset)
 	}
 	err = db.Find(&states, q)
 	return states, err

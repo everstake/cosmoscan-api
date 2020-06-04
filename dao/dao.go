@@ -34,6 +34,7 @@ type (
 		CreateDelegatorRewards(rewards []dmodels.DelegatorReward) error
 		CreateValidatorRewards(rewards []dmodels.ValidatorReward) error
 		CreateProposals(proposals []dmodels.Proposal) error
+		GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal, err error)
 		CreateProposalDeposits(deposits []dmodels.ProposalDeposit) error
 		CreateProposalVotes(votes []dmodels.ProposalVote) error
 		CreateHistoricalStates(states []dmodels.HistoricalState) error

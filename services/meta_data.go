@@ -47,6 +47,12 @@ func (s *ServiceFacade) GetMetaData() (meta smodels.MetaData, err error) {
 			}
 		}
 	}
-	// todo last proposal
+	proposals, err := s.dao.GetProposals(filters.Proposals{Limit: 1})
+	if err != nil {
+		return meta, fmt.Errorf("dao.GetProposals: %s", err.Error())
+	}
+	if len(proposals) != 0 {
+		meta.LatestProposal = proposals[0].Title
+	}
 	return meta, nil
 }

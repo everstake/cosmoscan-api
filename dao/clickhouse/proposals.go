@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 )
 
@@ -39,4 +40,16 @@ func (db DB) CreateProposals(proposals []dmodels.Proposal) error {
 		)
 	}
 	return db.Insert(q)
+}
+
+func (db DB) GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal, err error) {
+	q := squirrel.Select("*").From(dmodels.HistoricalStates).OrderBy("pro_created_at desc")
+	if filter.Limit != 0 {
+		q = q.Limit(filter.Limit)
+	}
+	if filter.Offset != 0 {
+		q = q.Limit(filter.Offset)
+	}
+	err = db.Find(&proposals, q)
+	return proposals, err
 }
