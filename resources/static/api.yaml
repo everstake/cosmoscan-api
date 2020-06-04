@@ -1,0 +1,155 @@
+openapi: 3.0.1
+info:
+  title: "Cosmoscan API"
+  description: 'Global errors: <ul><li>{"error" : "bad_request", "msg": ""} - invalid request from client (Status code:400) </li><li> {"error" : "service_error"} - error on the service side (Status code:500)</li></ul>'
+  version: 1.0.0
+tags:
+  - name: Services
+paths:
+  /meta:
+    get:
+      tags:
+        - Services
+      summary: Meta information
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  height:
+                    type: string
+                  latest_validator:
+                    type: string
+                  latest_proposal:
+                    type: string
+                  validator_avg_fee:
+                    type: number
+                  block_time:
+                    type: number
+                  current_price:
+                    type: number
+                example:
+                  height: 500
+                  latest_validator: "Everstake"
+                  latest_proposal: "Free transactions"
+                  validator_avg_fee: "10"
+                  block_time: 6.7
+                  current_price: "3.2"
+  /historical-state:
+    get:
+      tags:
+        - Services
+      summary: Get historical state
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current:
+                    type: object
+                    properties:
+                      price:
+                        type: number
+                      market_cap:
+                        type: number
+                      circulating_supply:
+                        type: number
+                      trading_volume:
+                        type: number
+                      staked_ratio:
+                        type: number
+                      transactions_count:
+                        type: number
+                      community_pool:
+                        type: number
+                      top20_weight:
+                        type: number
+                      created_at:
+                        type: number
+                  price_agg:
+                    $ref: '#/components/schemas/agg_item'
+                  market_cap_agg:
+                    $ref: '#/components/schemas/agg_item'
+                  staked_ratio:
+                    $ref: '#/components/schemas/agg_item'
+  /transactions/fee/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted fee
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /transfers/volume/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted transfers volume
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+components:
+  schemas:
+    agg_item:
+      type: array
+      items:
+        type: object
+        properties:
+          time:
+            type: number
+          value:
+            type: number
+      example:
+        [{time: 1591258057, value: "32.32"}, {time: 1591258052, value: "5"}]

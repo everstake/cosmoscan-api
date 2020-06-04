@@ -1,8 +1,8 @@
 {
   "api": {
-    "port": "8000",
+    "port": "8080",
     "allowed_hosts": [
-      "http://localhost:8080"
+      "http://localhost:8000"
     ]
   },
   "mysql": {

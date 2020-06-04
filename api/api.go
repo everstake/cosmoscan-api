@@ -12,6 +12,8 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/rs/cors"
 	"github.com/urfave/negroni"
+	"go.uber.org/zap"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -75,6 +77,10 @@ func (api *API) loadRoutes() {
 
 	api.router = mux.NewRouter()
 
+	api.router.
+		PathPrefix("/static").
+		Handler(http.StripPrefix("/static", http.FileServer(http.Dir("./resources/static"))))
+
 	wrapper := negroni.New()
 
 	wrapper.Use(cors.New(cors.Options{
@@ -88,6 +94,7 @@ func (api *API) loadRoutes() {
 	HandleActions(api.router, wrapper, "", []*Route{
 		{Path: "/", Method: http.MethodGet, Func: api.Index},
 		{Path: "/health", Method: http.MethodGet, Func: api.Health},
+		{Path: "/api", Method: http.MethodGet, Func: api.GetSwaggerAPI},
 
 		{Path: "/meta", Method: http.MethodGet, Func: api.GetMetaData},
 		{Path: "/historical-state", Method: http.MethodGet, Func: api.GetHistoricalState},
@@ -111,7 +118,7 @@ func jsonData(writer http.ResponseWriter, data interface{}) {
 func jsonError(writer http.ResponseWriter) {
 	writer.WriteHeader(500)
 	bytes, err := json.Marshal(errResponse{
-		Error: "service error",
+		Error: "service_error",
 	})
 	if err != nil {
 		writer.Write([]byte("can`t marshal json"))
@@ -123,7 +130,7 @@ func jsonError(writer http.ResponseWriter) {
 
 func jsonBadRequest(writer http.ResponseWriter, msg string) {
 	bytes, err := json.Marshal(errResponse{
-		Error: "bad request",
+		Error: "bad_request",
 		Msg:   msg,
 	})
 	if err != nil {
@@ -134,4 +141,17 @@ func jsonBadRequest(writer http.ResponseWriter, msg string) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(400)
 	writer.Write(bytes)
+}
+
+func (api *API) GetSwaggerAPI(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadFile("./resources/templates/swagger.html")
+	if err != nil {
+		log.Error("GetSwaggerAPI: ReadFile", zap.Error(err))
+		return
+	}
+	_, err = w.Write(body)
+	if err != nil {
+		log.Error("GetSwaggerAPI: Write", zap.Error(err))
+		return
+	}
 }

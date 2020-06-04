@@ -21,23 +21,23 @@ type Agg struct {
 
 var aggLimits = map[string]struct {
 	defaultRange time.Duration
-	MaxRange     time.Duration
+	maxRange     time.Duration
 }{
 	AggByHour: {
 		defaultRange: time.Hour * 24,
-		MaxRange:     time.Hour * 24 * 7,
+		maxRange:     time.Hour * 24 * 7,
 	},
 	AggByDay: {
 		defaultRange: time.Hour * 24 * 30,
-		MaxRange:     time.Hour * 24 * 30 * 2,
+		maxRange:     time.Hour * 24 * 30 * 2,
 	},
 	AggByWeek: {
 		defaultRange: time.Hour * 24 * 40,
-		MaxRange:     time.Hour * 24 * 40 * 3,
+		maxRange:     time.Hour * 24 * 40 * 3,
 	},
 	AggByMonth: {
 		defaultRange: time.Hour * 24 * 365,
-		MaxRange:     time.Hour * 24 * 365 * 2,
+		maxRange:     time.Hour * 24 * 365 * 2,
 	},
 }
 
@@ -51,7 +51,7 @@ func (agg *Agg) Validate() error {
 		agg.To = dmodels.NewTime(time.Now())
 	} else {
 		d := agg.To.Sub(agg.From.Time)
-		if d > limit.MaxRange {
+		if d > limit.maxRange {
 			return fmt.Errorf("over max limit range")
 		}
 	}

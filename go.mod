@@ -17,4 +17,5 @@ require (
 	github.com/shopspring/decimal v1.2.0
 	github.com/tendermint/tendermint v0.33.3
 	github.com/urfave/negroni v1.0.0
+	go.uber.org/zap v1.13.0
 )
