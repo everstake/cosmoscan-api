@@ -9,6 +9,7 @@ import (
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
+	"sort"
 	"strings"
 	"time"
 )
@@ -72,6 +73,9 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 	if err != nil {
 		return state, fmt.Errorf("node.GetValidators: %s", err.Error())
 	}
+	sort.Slice(validators, func(i, j int) bool {
+		return validators[i].DelegatorShares.GreaterThan(validators[j].DelegatorShares)
+	})
 	if len(validators) >= 20 {
 		top20Stake := decimal.Zero
 		for i := 0; i < 20; i++ {
@@ -104,9 +108,6 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 		return state, fmt.Errorf("cmc not found currency")
 	}
 	state.CreatedAt = dmodels.NewTime(time.Now())
-
-	// todo transactions count
-
 	return state, nil
 }
 
