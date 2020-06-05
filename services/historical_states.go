@@ -82,8 +82,8 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 			top20Stake = top20Stake.Add(validators[i].DelegatorShares)
 		}
 		top20Stake = top20Stake.Div(node.PrecisionDiv)
-		if !totalSupply.IsZero() {
-			state.Top20Weight = top20Stake.Div(totalSupply).Mul(decimal.New(100, 0)).Truncate(2)
+		if !stakingPool.Result.BondedTokens.IsZero() {
+			state.Top20Weight = top20Stake.Div(stakingPool.Result.BondedTokens).Mul(decimal.New(100, 0)).Truncate(2)
 		}
 	}
 
