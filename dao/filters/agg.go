@@ -81,12 +81,11 @@ func (agg *Agg) BuildQuery(aggValue string, timeColumn string, table string) squ
 	).From(table).
 		GroupBy("time").
 		OrderBy("time")
-	// todo
-	//if !agg.From.IsZero() {
-	//	q = q.Where(squirrel.GtOrEq{timeColumn: agg.From.Time})
-	//}
-	//if !agg.To.IsZero() {
-	//	q = q.Where(squirrel.LtOrEq{timeColumn: agg.To.Time})
-	//}
+	if !agg.From.IsZero() {
+		q = q.Where(squirrel.GtOrEq{timeColumn: agg.From.Time})
+	}
+	if !agg.To.IsZero() {
+		q = q.Where(squirrel.LtOrEq{timeColumn: agg.To.Time})
+	}
 	return q
 }
