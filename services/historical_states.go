@@ -87,7 +87,7 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 		}
 	}
 
-	state.CirculatingSupply = totalSupply.Div(stakingPool.Result.BondedTokens).Truncate(2)
+	state.CirculatingSupply = totalSupply.Sub(stakingPool.Result.BondedTokens).Truncate(2)
 
 	currencies, err := s.cmc.GetCurrencies()
 	if err != nil {
