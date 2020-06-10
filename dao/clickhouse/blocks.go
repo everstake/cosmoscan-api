@@ -5,6 +5,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
+	"github.com/everstake/cosmoscan-api/smodels"
 )
 
 func (db DB) CreateBlocks(blocks []dmodels.Block) error {
@@ -39,5 +40,37 @@ func (db DB) GetBlocks(filter filters.Blocks) (blocks []dmodels.Block, err error
 		q = q.Offset(filter.Offset)
 	}
 	err = db.Find(&blocks, q)
-	return blocks, nil
+	return blocks, err
+}
+
+func (db DB) GetAggBlocksCount(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := filter.BuildQuery("toDecimal64(count(blk_id), 0)", "blk_created_at", dmodels.BlocksTable)
+	err = db.Find(&items, q)
+	return items, err
+}
+
+func (db DB) GetAggBlocksDelay(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := squirrel.Select(
+		"avg(toUnixTimestamp(b1.blk_created_at) - toUnixTimestamp(b2.blk_created_at)) as value",
+		"toDateTime(toStartOfWeek(b1.blk_created_at)) as time",
+	).From(fmt.Sprintf("%s as b1", dmodels.BlocksTable)).
+		JoinClause("JOIN blocks as b2 ON b1.blk_id = toUInt64(plus(b2.blk_id, 1))").
+		Where(squirrel.Gt{"b1.blk_id": 2}).
+		GroupBy("time").
+		OrderBy("time")
+
+	if !filter.From.IsZero() {
+		q = q.Where(squirrel.GtOrEq{"time": filter.From.Time})
+	}
+	if !filter.To.IsZero() {
+		q = q.Where(squirrel.LtOrEq{"time": filter.To.Time})
+	}
+	err = db.Find(&items, q)
+	return items, err
+}
+
+func (db DB) GetAggUniqBlockValidators(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := filter.BuildQuery("toDecimal64(count(DISTINCT blk_proposer), 0)", "blk_created_at", dmodels.BlocksTable)
+	err = db.Find(&items, q)
+	return items, err
 }

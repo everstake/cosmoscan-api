@@ -3,7 +3,9 @@ package clickhouse
 import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
+	"github.com/everstake/cosmoscan-api/smodels"
 )
 
 func (db DB) CreateDelegations(delegations []dmodels.Delegation) error {
@@ -30,4 +32,18 @@ func (db DB) CreateDelegations(delegations []dmodels.Delegation) error {
 		q = q.Values(delegation.ID, delegation.TxHash, delegation.Delegator, delegation.Validator, delegation.Amount, delegation.CreatedAt)
 	}
 	return db.Insert(q)
+}
+
+func (db DB) GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := filter.BuildQuery("sum(dlg_amount)", "dlg_created_at", dmodels.DelegationsTable)
+	q = q.Where(squirrel.Gt{"dlg_amount": 0})
+	err = db.Find(&items, q)
+	return items, err
+}
+
+func (db DB) GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := filter.BuildQuery("sum(abs(dlg_amount))", "dlg_created_at", dmodels.DelegationsTable)
+	q = q.Where(squirrel.Lt{"dlg_amount": 0})
+	err = db.Find(&items, q)
+	return items, err
 }

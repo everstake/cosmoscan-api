@@ -52,7 +52,10 @@ func (s *ServiceFacade) GetMetaData() (meta smodels.MetaData, err error) {
 		return meta, fmt.Errorf("dao.GetProposals: %s", err.Error())
 	}
 	if len(proposals) != 0 {
-		meta.LatestProposal = proposals[0].Title
+		meta.LatestProposal = smodels.MetaDataProposal{
+			Name: proposals[0].Title,
+			ID:   proposals[0].ID,
+		}
 	}
 	return meta, nil
 }

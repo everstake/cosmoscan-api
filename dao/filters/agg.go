@@ -2,6 +2,7 @@ package filters
 
 import (
 	"fmt"
+	"github.com/Masterminds/squirrel"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"time"
 )
@@ -71,4 +72,21 @@ func (agg *Agg) AggFunc() string {
 	default:
 		return "toStartOfDay"
 	}
+}
+
+func (agg *Agg) BuildQuery(aggValue string, timeColumn string, table string) squirrel.SelectBuilder {
+	q := squirrel.Select(
+		fmt.Sprintf("%s as value", aggValue),
+		fmt.Sprintf("toDateTime(%s(%s)) AS time", agg.AggFunc(), timeColumn),
+	).From(table).
+		GroupBy("time").
+		OrderBy("time")
+	// todo
+	//if !agg.From.IsZero() {
+	//	q = q.Where(squirrel.GtOrEq{timeColumn: agg.From.Time})
+	//}
+	//if !agg.To.IsZero() {
+	//	q = q.Where(squirrel.LtOrEq{timeColumn: agg.To.Time})
+	//}
+	return q
 }

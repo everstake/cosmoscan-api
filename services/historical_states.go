@@ -87,6 +87,8 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 		}
 	}
 
+	state.CirculatingSupply = totalSupply.Div(stakingPool.Result.BondedTokens).Truncate(2)
+
 	currencies, err := s.cmc.GetCurrencies()
 	if err != nil {
 		return state, fmt.Errorf("cmc.GetCurrencies: %s", err.Error())
@@ -100,7 +102,6 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 			state.Price = quote.Price.Truncate(8)
 			state.MarketCap = quote.MarketCap.Truncate(2)
 			state.TradingVolume = quote.Volume24h.Truncate(2)
-			state.CirculatingSupply = currency.CirculatingSupply.Truncate(2)
 			break
 		}
 	}

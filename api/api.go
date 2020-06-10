@@ -100,6 +100,12 @@ func (api *API) loadRoutes() {
 		{Path: "/historical-state", Method: http.MethodGet, Func: api.GetHistoricalState},
 		{Path: "/transactions/fee/agg", Method: http.MethodGet, Func: api.GetAggTransactionsFee},
 		{Path: "/transfers/volume/agg", Method: http.MethodGet, Func: api.GetAggTransfersVolume},
+		{Path: "/operations/count/agg", Method: http.MethodGet, Func: api.GetAggOperationsCount},
+		{Path: "/blocks/count/agg", Method: http.MethodGet, Func: api.GetAggBlocksCount},
+		{Path: "/blocks/delay/agg", Method: http.MethodGet, Func: api.GetAggBlocksDelay},
+		{Path: "/blocks/validators/uniq/agg", Method: http.MethodGet, Func: api.GetAggUniqBlockValidators},
+		{Path: "/delegations/volume/agg", Method: http.MethodGet, Func: api.GetAggDelegationsVolume},
+		{Path: "/undelegations/volume/agg", Method: http.MethodGet, Func: api.GetAggUndelegationsVolume},
 	})
 
 }

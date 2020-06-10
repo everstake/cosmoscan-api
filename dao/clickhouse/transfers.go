@@ -43,8 +43,5 @@ func (db DB) GetAggTransfersVolume(filter filters.Agg) (items []smodels.AggItem,
 		q = q.Where(squirrel.LtOrEq{"trf_created_at": filter.To.Time})
 	}
 	err = db.Find(&items, q)
-	if err != nil {
-		return nil, err
-	}
-	return items, nil
+	return items, err
 }

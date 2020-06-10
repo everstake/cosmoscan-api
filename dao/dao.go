@@ -30,11 +30,17 @@ type (
 	Clickhouse interface {
 		CreateBlocks(blocks []dmodels.Block) error
 		GetBlocks(filter filters.Blocks) (blocks []dmodels.Block, err error)
+		GetAggBlocksCount(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggBlocksDelay(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggUniqBlockValidators(filter filters.Agg) (items []smodels.AggItem, err error)
 		CreateTransactions(transactions []dmodels.Transaction) error
+		GetAggOperationsCount(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggTransactionsFee(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggTransfersVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		CreateTransfers(transfers []dmodels.Transfer) error
 		CreateDelegations(delegations []dmodels.Delegation) error
+		GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		CreateDelegatorRewards(rewards []dmodels.DelegatorReward) error
 		CreateValidatorRewards(rewards []dmodels.ValidatorReward) error
 		CreateProposals(proposals []dmodels.Proposal) error

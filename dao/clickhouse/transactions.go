@@ -47,21 +47,13 @@ func (db DB) CreateTransactions(transactions []dmodels.Transaction) error {
 }
 
 func (db DB) GetAggTransactionsFee(filter filters.Agg) (items []smodels.AggItem, err error) {
-	q := squirrel.Select(
-		"sum(trn_fee) AS value",
-		fmt.Sprintf("toDateTime(%s(trn_created_at)) AS time", filter.AggFunc()),
-	).From(dmodels.TransactionsTable).
-		GroupBy("time").
-		OrderBy("time")
-	if !filter.From.IsZero() {
-		q = q.Where(squirrel.GtOrEq{"trn_created_at": filter.From.Time})
-	}
-	if !filter.To.IsZero() {
-		q = q.Where(squirrel.LtOrEq{"trn_created_at": filter.To.Time})
-	}
+	q := filter.BuildQuery("sum(trn_fee)", "trn_created_at", dmodels.TransactionsTable)
 	err = db.Find(&items, q)
-	if err != nil {
-		return nil, err
-	}
-	return items, nil
+	return items, err
+}
+
+func (db DB) GetAggOperationsCount(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := filter.BuildQuery("toDecimal64(sum(trn_messages), 0)", "trn_created_at", dmodels.TransactionsTable)
+	err = db.Find(&items, q)
+	return items, err
 }

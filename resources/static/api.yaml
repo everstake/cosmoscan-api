@@ -140,6 +140,192 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/agg_item'
+  /operations/count/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted count of operations
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /blocks/count/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted count of blocks
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /blocks/delay/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted average block delay
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /blocks/validators/uniq/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted number of unique validators that signed the blocks
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /delegations/volume/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted delegations volume
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /undelegations/volume/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted undelegations volume
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
 components:
   schemas:
     agg_item:

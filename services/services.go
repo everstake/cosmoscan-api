@@ -17,8 +17,14 @@ type (
 		GetValidatorMap() (map[string]node.Validator, error)
 		GetMetaData() (meta smodels.MetaData, err error)
 		GetAggTransactionsFee(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggOperationsCount(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggTransfersVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetHistoricalState() (state smodels.HistoricalState, err error)
+		GetAggBlocksCount(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggBlocksDelay(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggUniqBlockValidators(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

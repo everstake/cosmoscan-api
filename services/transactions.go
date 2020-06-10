@@ -13,3 +13,11 @@ func (s *ServiceFacade) GetAggTransactionsFee(filter filters.Agg) (items []smode
 	}
 	return items, nil
 }
+
+func (s *ServiceFacade) GetAggOperationsCount(filter filters.Agg) (items []smodels.AggItem, err error) {
+	items, err = s.dao.GetAggOperationsCount(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetAggOperationsCount: %s", err.Error())
+	}
+	return items, nil
+}
