@@ -50,7 +50,7 @@ func (m *DB) tryOpenConnection() {
 
 func (m *DB) openConnection() error {
 	source := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?charset=utf8&multiStatements=true&parseTime=true",
+		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&multiStatements=true&parseTime=true",
 		m.config.User,
 		m.config.Password,
 		m.config.Host,

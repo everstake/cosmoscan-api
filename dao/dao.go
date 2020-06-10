@@ -22,6 +22,10 @@ type (
 		GetParsers() (parsers []dmodels.Parser, err error)
 		GetParser(title string) (parser dmodels.Parser, err error)
 		UpdateParser(parser dmodels.Parser) error
+		CreateValidators(validators []dmodels.Validator) error
+		UpdateValidators(validator dmodels.Validator) error
+		CreateAccounts(accounts []dmodels.Account) error
+		UpdateAccount(account dmodels.Account) error
 	}
 	Clickhouse interface {
 		CreateBlocks(blocks []dmodels.Block) error

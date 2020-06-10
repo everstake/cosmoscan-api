@@ -11,6 +11,7 @@ import (
 )
 
 const genesisJson = "https://raw.githubusercontent.com/cosmos/launch/master/genesis.json"
+const saveGenesisBatch = 100
 
 type Genesis struct {
 	AppState struct {
@@ -74,7 +75,7 @@ func (p *Parser) parseGenesisState() error {
 	if err != nil {
 		return fmt.Errorf("getGenesisState: %s", err.Error())
 	}
-	t, err := time.Parse("2014-09-12T11:45:26.371Z", "2019-12-11T11:45:26.371Z")
+	t, err := time.Parse("2006-01-02", "2019-12-11")
 	if err != nil {
 		return fmt.Errorf("time.Parse: %s", err.Error())
 	}
@@ -124,5 +125,39 @@ func (p *Parser) parseGenesisState() error {
 			CreatedAt:   t,
 		})
 	}
+
+	for i := 0; i < len(validators); i += saveGenesisBatch {
+		endOfPart := i + saveGenesisBatch
+		if i+saveGenesisBatch > len(validators) {
+			endOfPart = len(validators)
+		}
+		err := p.dao.CreateValidators(validators[i:endOfPart])
+		if err != nil {
+			return fmt.Errorf("dao.CreateValidators: %s", err.Error())
+		}
+	}
+
+	for i := 0; i < len(accounts); i += saveGenesisBatch {
+		endOfPart := i + saveGenesisBatch
+		if i+saveGenesisBatch > len(accounts) {
+			endOfPart = len(accounts)
+		}
+		err := p.dao.CreateAccounts(accounts[i:endOfPart])
+		if err != nil {
+			return fmt.Errorf("dao.CreateAccounts: %s", err.Error())
+		}
+	}
+
+	for i := 0; i < len(delegations); i += saveGenesisBatch {
+		endOfPart := i + saveGenesisBatch
+		if i+saveGenesisBatch > len(delegations) {
+			endOfPart = len(delegations)
+		}
+		err := p.dao.CreateDelegations(delegations[i:endOfPart])
+		if err != nil {
+			return fmt.Errorf("dao.CreateDelegations: %s", err.Error())
+		}
+	}
+
 	return nil
 }

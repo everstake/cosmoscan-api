@@ -123,6 +123,13 @@ func (p *Parser) Run() error {
 				batch = latestBlock.Block.Header.Height - model.Height
 			}
 
+			if model.Height == 0 {
+				err = p.parseGenesisState()
+				if err != nil {
+					return fmt.Errorf("parseGenesisState: %s", err.Error())
+				}
+			}
+
 			to := model.Height + batch
 			for i := model.Height + 1; i <= to; i++ {
 				p.fetcherCh <- task{
