@@ -27,6 +27,7 @@ type (
 		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		KeepRangeStates()
 		GetNetworkStates() (states map[string]smodels.RangeState, err error)
+		GetStakingPie() (pie smodels.Pie, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

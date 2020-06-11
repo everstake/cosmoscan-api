@@ -353,6 +353,33 @@ paths:
                     $ref: '#/components/schemas/stats'
                   block_delay:
                     $ref: '#/components/schemas/stats'
+  /staking/pie:
+    get:
+      tags:
+        - Services
+      summary: Get top 20 staking shares
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: number
+                  parts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        label:
+                          type: string
+                        value:
+                          type: number
+                example: {total: 4321, parts: [{title: everstake, value: 123}]}
 components:
   schemas:
     agg_item:
