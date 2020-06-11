@@ -6,6 +6,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/smodels"
+	"github.com/shopspring/decimal"
 )
 
 func (db DB) CreateDelegations(delegations []dmodels.Delegation) error {
@@ -46,4 +47,31 @@ func (db DB) GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggI
 	q = q.Where(squirrel.Lt{"dlg_amount": 0})
 	err = db.Find(&items, q)
 	return items, err
+}
+
+func (db DB) GetDelegatorsTotal(filter filters.TimeRange) (total uint64, err error) {
+	q := squirrel.Select("count(DISTINCT dlg_delegator) as total").From(dmodels.DelegationsTable)
+	q = filter.Query("dlg_created_at", q)
+	err = db.FindFirst(&total, q)
+	return total, err
+}
+
+func (db DB) GetMultiDelegatorsTotal(filter filters.TimeRange) (total uint64, err error) {
+	q1 := squirrel.Select("count(dlg_validator) as validators").
+		From(dmodels.DelegationsTable).
+		GroupBy("dlg_delegator")
+	q1 = filter.Query("dlg_created_at", q1)
+	q := squirrel.Select("count(*) as total").FromSelect(q1, "t").
+		Where(squirrel.Gt{"t.validators": 2})
+	err = db.FindFirst(&total, q)
+	return total, err
+}
+
+func (db DB) GetUndelegationsVolume(filter filters.TimeRange) (total decimal.Decimal, err error) {
+	q := squirrel.Select("sum(abs(dlg_amount)) as total").
+		From(dmodels.DelegationsTable).
+		Where(squirrel.Lt{"dlg_amount": 0})
+	q = filter.Query("dlg_created_at", q)
+	err = db.FindFirst(&total, q)
+	return total, err
 }

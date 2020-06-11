@@ -9,6 +9,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dao/mysql"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/smodels"
+	"github.com/shopspring/decimal"
 	"time"
 )
 
@@ -26,20 +27,30 @@ type (
 		UpdateValidators(validator dmodels.Validator) error
 		CreateAccounts(accounts []dmodels.Account) error
 		UpdateAccount(account dmodels.Account) error
+		GetRangeStates(titles []string) (items []dmodels.RangeState, err error)
+		UpdateRangeState(item dmodels.RangeState) error
+		CreateRangeState(item dmodels.RangeState) error
 	}
 	Clickhouse interface {
 		CreateBlocks(blocks []dmodels.Block) error
 		GetBlocks(filter filters.Blocks) (blocks []dmodels.Block, err error)
 		GetAggBlocksCount(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggBlocksDelay(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAvgBlocksDelay(filter filters.TimeRange) (delay float64, err error)
 		GetAggUniqBlockValidators(filter filters.Agg) (items []smodels.AggItem, err error)
 		CreateTransactions(transactions []dmodels.Transaction) error
 		GetAggOperationsCount(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggTransactionsFee(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetTransactionsFeeVolume(filter filters.TimeRange) (total decimal.Decimal, err error)
+		GetTransactionsHighestFee(filter filters.TimeRange) (total decimal.Decimal, err error)
 		GetAggTransfersVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		CreateTransfers(transfers []dmodels.Transfer) error
+		GetTransferVolume(filter filters.TimeRange) (total decimal.Decimal, err error)
 		CreateDelegations(delegations []dmodels.Delegation) error
 		GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetUndelegationsVolume(filter filters.TimeRange) (total decimal.Decimal, err error)
+		GetDelegatorsTotal(filter filters.TimeRange) (total uint64, err error)
+		GetMultiDelegatorsTotal(filter filters.TimeRange) (total uint64, err error)
 		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		CreateDelegatorRewards(rewards []dmodels.DelegatorReward) error
 		CreateValidatorRewards(rewards []dmodels.ValidatorReward) error

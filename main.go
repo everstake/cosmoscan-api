@@ -31,7 +31,6 @@ func main() {
 		log.Fatal("services.NewServices: %s", err.Error())
 	}
 
-	// todo empty block ID
 	prs := hub3.NewParser(cfg, d)
 
 	apiServer := api.NewAPI(cfg, s, d)
@@ -41,6 +40,7 @@ func main() {
 	sch.AddProcessWithInterval(s.UpdateValidatorsMap, time.Minute*10)
 
 	go s.KeepHistoricalState()
+	go s.KeepRangeStates()
 
 	g := modules.NewGroup(apiServer, sch, prs)
 	g.Run()

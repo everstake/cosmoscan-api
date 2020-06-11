@@ -249,6 +249,9 @@ func (api *API) get(endpoint string, params map[string]string, result interface{
 		return fmt.Errorf("client.Get: %s", err.Error())
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %d", resp.StatusCode)
+	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("ioutil.ReadAll: %s", err.Error())

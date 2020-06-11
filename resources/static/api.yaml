@@ -326,6 +326,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/agg_item'
+  /network/stats:
+    get:
+      tags:
+        - Services
+      summary: Get network stats
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  number_delegators:
+                    $ref: '#/components/schemas/stats'
+                  number_multi_delegators:
+                    $ref: '#/components/schemas/stats'
+                  transfer_volume:
+                    $ref: '#/components/schemas/stats'
+                  fee_volume:
+                    $ref: '#/components/schemas/stats'
+                  highest_fee:
+                    $ref: '#/components/schemas/stats'
+                  undelegation_volume:
+                    $ref: '#/components/schemas/stats'
+                  block_delay:
+                    $ref: '#/components/schemas/stats'
 components:
   schemas:
     agg_item:
@@ -339,3 +366,21 @@ components:
             type: number
       example:
         [{time: 1591258057, value: "32.32"}, {time: 1591258052, value: "5"}]
+    stats:
+      type: object
+      properties:
+        rst_value_1d:
+          type: number
+        rst_value_7d:
+          type: number
+        rst_value_30d:
+          type: number
+        rst_value_90d:
+          type: number
+      example: {
+        rst_value_1d: 32.42,
+        rst_value_7d: 4.4,
+        rst_value_30d: 111,
+        rst_value_90d: 2,
+      }
+

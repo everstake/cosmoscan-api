@@ -49,7 +49,33 @@ create table accounts
   COLLATE = utf8mb4_general_ci;
 
 
+create table accounts
+(
+    acc_address    varchar(255)                             not null
+        primary key,
+    acc_balance    decimal(20, 8) default 0.00000000        not null,
+    acc_created_at timestamp      default CURRENT_TIMESTAMP not null
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_general_ci;
+
+
+create table range_states
+(
+    rst_title      varchar(255)                        not null
+        primary key,
+    rst_value_1d   text                                null,
+    rst_value_7d   text                                null,
+    rst_value_30d  text                                null,
+    rst_value_90d  text                                null,
+    rst_updated_at timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_general_ci;
+
+
 -- +migrate Down
 drop table parsers;
 drop table validators;
 drop table accounts;
+drop table range_states;

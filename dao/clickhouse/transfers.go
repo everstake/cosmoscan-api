@@ -6,6 +6,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/smodels"
+	"github.com/shopspring/decimal"
 )
 
 func (db DB) CreateTransfers(transfers []dmodels.Transfer) error {
@@ -44,4 +45,14 @@ func (db DB) GetAggTransfersVolume(filter filters.Agg) (items []smodels.AggItem,
 	}
 	err = db.Find(&items, q)
 	return items, err
+}
+
+
+func (db DB) GetTransferVolume(filter filters.TimeRange) (total decimal.Decimal, err error) {
+	q := squirrel.Select("sum(trf_amount) as total").
+		From(dmodels.TransfersTable).
+		Where("notEmpty(trf_from)")
+	q = filter.Query("trf_created_at", q)
+	err = db.FindFirst(&total, q)
+	return total, err
 }

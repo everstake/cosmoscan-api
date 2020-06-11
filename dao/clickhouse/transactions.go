@@ -6,6 +6,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/smodels"
+	"github.com/shopspring/decimal"
 )
 
 func (db DB) CreateTransactions(transactions []dmodels.Transaction) error {
@@ -56,4 +57,18 @@ func (db DB) GetAggOperationsCount(filter filters.Agg) (items []smodels.AggItem,
 	q := filter.BuildQuery("toDecimal64(sum(trn_messages), 0)", "trn_created_at", dmodels.TransactionsTable)
 	err = db.Find(&items, q)
 	return items, err
+}
+
+func (db DB) GetTransactionsFeeVolume(filter filters.TimeRange) (total decimal.Decimal, err error) {
+	q := squirrel.Select("sum(trn_fee) as total").From(dmodels.TransactionsTable)
+	q = filter.Query("trn_created_at", q)
+	err = db.FindFirst(&total, q)
+	return total, err
+}
+
+func (db DB) GetTransactionsHighestFee(filter filters.TimeRange) (total decimal.Decimal, err error) {
+	q := squirrel.Select("max(trn_fee) as total").From(dmodels.TransactionsTable)
+	q = filter.Query("trn_created_at", q)
+	err = db.FindFirst(&total, q)
+	return total, err
 }

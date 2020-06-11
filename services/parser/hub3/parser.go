@@ -166,13 +166,6 @@ func (p *Parser) runFetchers() {
 						for {
 							task.value, err = p.api.GetBlock(task.height)
 							if err == nil {
-
-								// todo delete
-								b := task.value.(Block)
-								if b.Block.Header.Height == 0 {
-									log.Error("!!!! empty height in block %d", b.Block.Header.Height)
-								}
-
 								p.workerCh <- task
 								break
 							}

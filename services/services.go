@@ -25,6 +25,8 @@ type (
 		GetAggUniqBlockValidators(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
+		KeepRangeStates()
+		GetNetworkStates() (states map[string]smodels.RangeState, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)
