@@ -93,7 +93,7 @@ func (s *ServiceFacade) makeFirstUpdateBalance() error {
 
 func (s *ServiceFacade) makeUpdateBalance(accounts []string) {
 	var err error
-	for i, acc := range accounts {
+	for _, acc := range accounts {
 		var balance, stake, unbonding decimal.Decimal
 		for {
 			balance, err = s.node.GetBalance(acc)
