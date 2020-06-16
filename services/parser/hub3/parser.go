@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
+	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/shopspring/decimal"
@@ -19,7 +20,7 @@ import (
 )
 
 const repeatDelay = time.Second * 5
-const parserTitle = "hub3"
+const ParserTitle = "hub3"
 
 const taskNameBlock = "block"
 const taskNameTxs = "txs"
@@ -39,6 +40,7 @@ type (
 		batchDone chan struct{}
 		errCh     chan error
 		data      data
+		accounts  map[string]struct{}
 
 		ctx  context.Context
 		stop context.CancelFunc
@@ -59,6 +61,7 @@ type (
 		proposals        []dmodels.Proposal
 		proposalVotes    []dmodels.ProposalVote
 		proposalDeposits []dmodels.ProposalDeposit
+		jailers          []dmodels.Jailer
 	}
 	task struct {
 		name   string
@@ -80,6 +83,7 @@ func NewParser(cfg config.Config, d dao.DAO) *Parser {
 		saverCh:   make(chan data),
 		errCh:     make(chan error),
 		batchDone: make(chan struct{}),
+		accounts:  make(map[string]struct{}),
 		ctx:       ctx,
 		stop:      cancel,
 		wg:        &sync.WaitGroup{},
@@ -97,10 +101,11 @@ func (p *Parser) Title() string {
 }
 
 func (p *Parser) Run() error {
-	model, err := p.dao.GetParser(parserTitle)
+	model, err := p.dao.GetParser(ParserTitle)
 	if err != nil {
 		return fmt.Errorf("parser not found")
 	}
+	p.setAccounts()
 	p.wg.Add(1)
 	defer p.wg.Done()
 	go p.runWorker()
@@ -128,6 +133,7 @@ func (p *Parser) Run() error {
 				if err != nil {
 					return fmt.Errorf("parseGenesisState: %s", err.Error())
 				}
+				p.setAccounts()
 			}
 
 			to := model.Height + batch
@@ -143,7 +149,7 @@ func (p *Parser) Run() error {
 				return nil
 			case <-p.batchDone:
 				model.Height += batch
-			case err := <-p.errCh:
+			case err := <-p.errCh: // todo restart parser module
 				return err
 			}
 		}
@@ -287,6 +293,8 @@ func (p *Parser) runWorker() {
 								err = p.parseDepositMsg(i, tx, msg.Value)
 							case VoteMsg:
 								err = p.parseVoteMsg(i, tx, msg.Value)
+							case UnJailMsg:
+								err = p.parseUnjailMsg(i, tx, msg.Value)
 							}
 							if err != nil {
 								p.errCh <- fmt.Errorf("%s, (height: %d): %s", msg.Type, tx.Height, err.Error())
@@ -609,6 +617,21 @@ func (p *Parser) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []by
 	return nil
 }
 
+func (p *Parser) parseUnjailMsg(index int, tx Tx, data []byte) (err error) {
+	var m MsgUnjail
+	err = json.Unmarshal(data, &m)
+	if err != nil {
+		return fmt.Errorf("json.Unmarshal: %s", err.Error())
+	}
+	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
+	p.data.jailers = append(p.data.jailers, dmodels.Jailer{
+		ID:        id,
+		Address:   m.Address,
+		CreatedAt: tx.Timestamp,
+	})
+	return nil
+}
+
 func (p *Parser) runSaver(model dmodels.Parser) {
 	height := model.Height
 	for {
@@ -687,10 +710,19 @@ func (p *Parser) runSaver(model dmodels.Parser) {
 			<-time.After(repeatDelay)
 		}
 		for {
+			err = p.dao.CreateJailers(data.jailers)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateJailers: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		p.saveNewAccounts(data)
+		for {
 			height += uint64(len(data.blocks))
 			err = p.dao.UpdateParser(dmodels.Parser{
 				ID:     model.ID,
-				Title:  parserTitle,
+				Title:  ParserTitle,
 				Height: height,
 			})
 			if err == nil {
@@ -699,6 +731,59 @@ func (p *Parser) runSaver(model dmodels.Parser) {
 			log.Error("Parser: dao.UpdateParser: %s", err.Error())
 			<-time.After(repeatDelay)
 		}
+	}
+}
+
+func (p *Parser) setAccounts() {
+	var accounts []dmodels.Account
+	var err error
+	for {
+		accounts, err = p.dao.GetAccounts(filters.Accounts{})
+		if err != nil {
+			log.Error("Parser: setAccounts: dao.GetAccounts: %s", err.Error())
+			<-time.After(repeatDelay)
+			continue
+		}
+		break
+	}
+	for _, account := range accounts {
+		p.accounts[account.Address] = struct{}{}
+	}
+}
+
+func (p *Parser) saveNewAccounts(data data) {
+	var newAccounts []dmodels.Account
+	addAccount := func(acc string, tm time.Time) {
+		_, ok := p.accounts[acc]
+		if !ok {
+			p.accounts[acc] = struct{}{}
+			newAccounts = append(newAccounts, dmodels.Account{
+				Address:   acc,
+				CreatedAt: tm,
+			})
+		}
+	}
+	for _, delegation := range data.delegations {
+		addAccount(delegation.Delegator, delegation.CreatedAt)
+	}
+	for _, transfer := range data.transfers {
+		if strings.TrimSpace(transfer.From) != "" {
+			addAccount(transfer.From, transfer.CreatedAt)
+		}
+		if strings.TrimSpace(transfer.To) != "" {
+			addAccount(transfer.To, transfer.CreatedAt)
+		}
+	}
+	for _, reward := range data.delegatorRewards {
+		addAccount(reward.Delegator, reward.CreatedAt)
+	}
+	for {
+		err := p.dao.CreateAccounts(newAccounts)
+		if err == nil {
+			break
+		}
+		log.Error("Parser: dao.CreateAccounts: %s", err.Error())
+		<-time.After(repeatDelay)
 	}
 }
 

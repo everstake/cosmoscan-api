@@ -11,17 +11,17 @@ import (
 )
 
 const (
-	SendMsg                         = "cosmos-sdk/MsgSend"
-	MultiSendMsg                    = "cosmos-sdk/MsgMultiSend"
-	DelegateMsg                     = "cosmos-sdk/MsgDelegate"
-	UndelegateMsg                   = "cosmos-sdk/MsgUndelegate"
-	BeginRedelegateMsg              = "cosmos-sdk/MsgBeginRedelegate"
-	WithdrawDelegationRewardMsg     = "cosmos-sdk/MsgWithdrawDelegationReward"
-	WithdrawDelegationRewardsAllMsg = "cosmos-sdk/MsgWithdrawDelegationRewardsAll"
-	WithdrawValidatorCommissionMsg  = "cosmos-sdk/MsgWithdrawValidatorCommission"
-	SubmitProposalMsg               = "cosmos-sdk/MsgSubmitProposal"
-	DepositMsg                      = "cosmos-sdk/MsgDeposit"
-	VoteMsg                         = "cosmos-sdk/MsgVote"
+	SendMsg                        = "cosmos-sdk/MsgSend"
+	MultiSendMsg                   = "cosmos-sdk/MsgMultiSend"
+	DelegateMsg                    = "cosmos-sdk/MsgDelegate"
+	UndelegateMsg                  = "cosmos-sdk/MsgUndelegate"
+	BeginRedelegateMsg             = "cosmos-sdk/MsgBeginRedelegate"
+	WithdrawDelegationRewardMsg    = "cosmos-sdk/MsgWithdrawDelegationReward"
+	WithdrawValidatorCommissionMsg = "cosmos-sdk/MsgWithdrawValidatorCommission"
+	SubmitProposalMsg              = "cosmos-sdk/MsgSubmitProposal"
+	DepositMsg                     = "cosmos-sdk/MsgDeposit"
+	VoteMsg                        = "cosmos-sdk/MsgVote"
+	UnJailMsg                      = "cosmos-sdk/MsgUnjail"
 )
 
 type (
@@ -185,6 +185,9 @@ type (
 		ProposalID uint64 `json:"proposal_id,string"`
 		Voter      string `json:"voter"`
 		Option     string `json:"option"`
+	}
+	MsgUnjail struct {
+		Address string `json:"address"`
 	}
 
 	TxsFilter struct {

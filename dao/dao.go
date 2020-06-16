@@ -27,9 +27,9 @@ type (
 		UpdateValidators(validator dmodels.Validator) error
 		CreateAccounts(accounts []dmodels.Account) error
 		UpdateAccount(account dmodels.Account) error
-		GetRangeStates(titles []string) (items []dmodels.RangeState, err error)
-		UpdateRangeState(item dmodels.RangeState) error
-		CreateRangeState(item dmodels.RangeState) error
+		GetAccount(address string) (account dmodels.Account, err error)
+		GetAccounts(filter filters.Accounts) (accounts []dmodels.Account, err error)
+		GetAccountsTotal(filter filters.Accounts) (total uint64, err error)
 	}
 	Clickhouse interface {
 		CreateBlocks(blocks []dmodels.Block) error
@@ -61,6 +61,13 @@ type (
 		CreateHistoricalStates(states []dmodels.HistoricalState) error
 		GetHistoricalStates(state filters.HistoricalState) (states []dmodels.HistoricalState, err error)
 		GetAggHistoricalStatesByField(filter filters.Agg, field string) (items []smodels.AggItem, err error)
+		GetActiveAccounts(filter filters.ActiveAccounts) (addresses []string, err error)
+		CreateBalanceUpdates(updates []dmodels.BalanceUpdate) error
+		GetBalanceUpdate(filter filters.BalanceUpdates) (updates []dmodels.BalanceUpdate, err error)
+		CreateJailers(jailers []dmodels.Jailer) error
+		GetJailersTotal() (total uint64, err error)
+		CreateStats(stats []dmodels.Stat) (err error)
+		GetStats(filter filters.Stats) (stats []dmodels.Stat, err error)
 	}
 
 	Cache interface {

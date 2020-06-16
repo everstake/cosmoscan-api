@@ -109,11 +109,16 @@ func (p *Parser) parseGenesisState() error {
 			CreatedAt: t,
 		})
 	}
+	accountDelegation := make(map[string]decimal.Decimal)
+	for _, delegation := range delegations {
+		accountDelegation[delegation.Delegator] = accountDelegation[delegation.Delegator].Add(delegation.Amount)
+	}
 	for _, account := range state.AppState.Accounts {
 		amount, _ := calculateAmount(account.Coins)
 		accounts = append(accounts, dmodels.Account{
 			Address:   account.Address,
 			Balance:   amount,
+			Stake:     accountDelegation[account.Address],
 			CreatedAt: t,
 		})
 	}

@@ -25,9 +25,11 @@ type (
 		GetAggUniqBlockValidators(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
-		KeepRangeStates()
-		GetNetworkStates() (states map[string]smodels.RangeState, err error)
+		GetNetworkStates(filter filters.Stats) (map[string][]decimal.Decimal, error)
 		GetStakingPie() (pie smodels.Pie, err error)
+		MakeUpdateBalances()
+		GetSizeOfNode() (size float64, err error)
+		MakeStats()
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)
@@ -38,6 +40,9 @@ type (
 		GetInflation() (amount decimal.Decimal, err error)
 		GetTotalSupply() (amount decimal.Decimal, err error)
 		GetStakingPool() (sp node.StakingPool, err error)
+		GetBalance(address string) (amount decimal.Decimal, err error)
+		GetStake(address string) (amount decimal.Decimal, err error)
+		GetUnbonding(address string) (amount decimal.Decimal, err error)
 	}
 
 	ServiceFacade struct {

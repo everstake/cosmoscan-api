@@ -57,7 +57,7 @@ type (
 		Height uint64          `json:"height,string"`
 		Result decimal.Decimal `json:"result"`
 	}
-	TotalSupply struct {
+	AmountResult struct {
 		Height uint64 `json:"height,string"`
 		Result [] struct {
 			Amount decimal.Decimal `json:"amount"`
@@ -68,6 +68,24 @@ type (
 		Result struct {
 			NotBondedTokens decimal.Decimal `json:"not_bonded_tokens"`
 			BondedTokens    decimal.Decimal `json:"bonded_tokens"`
+		} `json:"result"`
+	}
+	StakeResult struct {
+		Height uint64 `json:"height,string"`
+		Result []struct {
+			DelegatorAddress string          `json:"delegator_address"`
+			ValidatorAddress string          `json:"validator_address"`
+			Shares           decimal.Decimal `json:"shares"`
+		} `json:"result"`
+	}
+	UnbondingResult struct {
+		Height uint64 `json:"height,string"`
+		Result []struct {
+			DelegatorAddress string `json:"delegator_address"`
+			ValidatorAddress string `json:"validator_address"`
+			Entries          [] struct {
+				Balance decimal.Decimal `json:"balance"`
+			} `json:"entries"`
 		} `json:"result"`
 	}
 )
@@ -132,7 +150,7 @@ func (api API) GetInflation() (amount decimal.Decimal, err error) {
 }
 
 func (api API) GetTotalSupply() (amount decimal.Decimal, err error) {
-	var cp TotalSupply
+	var cp AmountResult
 	err = api.request("supply/total", &cp)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
@@ -140,8 +158,7 @@ func (api API) GetTotalSupply() (amount decimal.Decimal, err error) {
 	if len(cp.Result) == 0 {
 		return amount, fmt.Errorf("invalid response")
 	}
-	amount = cp.Result[0].Amount.Div(PrecisionDiv)
-	return amount, nil
+	return cp.Amount(), nil
 }
 
 func (api API) GetStakingPool() (sp StakingPool, err error) {
@@ -152,4 +169,48 @@ func (api API) GetStakingPool() (sp StakingPool, err error) {
 	sp.Result.BondedTokens = sp.Result.BondedTokens.Div(PrecisionDiv)
 	sp.Result.NotBondedTokens = sp.Result.NotBondedTokens.Div(PrecisionDiv)
 	return sp, nil
+}
+
+func (api API) GetBalance(address string) (amount decimal.Decimal, err error) {
+	var result AmountResult
+	err = api.request(fmt.Sprintf("/bank/balances/%s", address), &result)
+	if err != nil {
+		return amount, fmt.Errorf("request: %s", err.Error())
+	}
+	return result.Amount(), nil
+}
+
+func (api API) GetStake(address string) (amount decimal.Decimal, err error) {
+	var result StakeResult
+	err = api.request(fmt.Sprintf("/staking/delegators/%s/delegations", address), &result)
+	if err != nil {
+		return amount, fmt.Errorf("request: %s", err.Error())
+	}
+	shares := decimal.Zero
+	for _, r := range result.Result {
+		shares = shares.Add(r.Shares)
+	}
+	return shares.Div(PrecisionDiv), nil
+}
+func (api API) GetUnbonding(address string) (amount decimal.Decimal, err error) {
+	var result UnbondingResult
+	err = api.request(fmt.Sprintf("/staking/delegators/%s/unbonding_delegations", address), &result)
+	if err != nil {
+		return amount, fmt.Errorf("request: %s", err.Error())
+	}
+	for _, r := range result.Result {
+		for _, entry := range r.Entries {
+			amount = amount.Add(entry.Balance)
+		}
+	}
+	amount = amount.Div(PrecisionDiv)
+	return amount, nil
+}
+
+func (r *AmountResult) Amount() decimal.Decimal {
+	s := decimal.Zero
+	for _, a := range r.Result {
+		s = s.Add(a.Amount)
+	}
+	return s.Div(PrecisionDiv)
 }

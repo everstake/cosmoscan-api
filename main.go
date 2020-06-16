@@ -38,9 +38,10 @@ func main() {
 	sch := scheduler.NewScheduler()
 
 	sch.AddProcessWithInterval(s.UpdateValidatorsMap, time.Minute*10)
+	sch.EveryDayAt(s.MakeStats, 1, 0)
+	sch.EveryDayAt(s.MakeUpdateBalances, 2, 0)
 
 	go s.KeepHistoricalState()
-	go s.KeepRangeStates()
 
 	g := modules.NewGroup(apiServer, sch, prs)
 	g.Run()
