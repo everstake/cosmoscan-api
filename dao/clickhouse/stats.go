@@ -36,7 +36,7 @@ func (db DB) GetStats(filter filters.Stats) (stats []dmodels.Stat, err error) {
 		q = q.Where(squirrel.LtOrEq{"stt_created_at": filter.To})
 	}
 	if len(filter.Titles) != 0 {
-		q = q.Where(squirrel.Eq{"stt_titles": filter.Titles})
+		q = q.Where(squirrel.Eq{"stt_title": filter.Titles})
 	}
 	err = db.Find(&stats, q)
 	return stats, err
