@@ -69,12 +69,10 @@ func (s *ServiceFacade) makeFirstUpdateBalance() error {
 	if err != nil {
 		return fmt.Errorf("dao.GetActiveAccounts: %s", err.Error())
 	}
-	fmt.Println("activeAccounts", len(activeAccounts))
 	allAccounts, err := s.dao.GetAccounts(filters.Accounts{})
 	if err != nil {
 		return fmt.Errorf("dao.GetAccounts: %s", err.Error())
 	}
-	fmt.Println("allAccounts", len(allAccounts))
 
 	allUniqAccounts := make(map[string]struct{})
 	for _, acc := range activeAccounts {

@@ -8,6 +8,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/shopspring/decimal"
+	"math"
 	"time"
 )
 
@@ -65,7 +66,7 @@ func (s *ServiceFacade) getStates(filter filters.Stats) (map[string][]decimal.De
 func (s *ServiceFacade) MakeStats() {
 	now := time.Now()
 	y, m, d := now.Add(-time.Hour * 24).Date()
-	startOfYesterday := time.Date(y, m, d, 0, 0, 0, 0, nil)
+	startOfYesterday := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 	startOfToday := startOfYesterday.Add(time.Hour * 24)
 	stats := []struct {
 		title string
@@ -168,6 +169,9 @@ func (s *ServiceFacade) MakeStats() {
 				})
 				if err != nil {
 					return value, fmt.Errorf("dao.GetAvgBlocksDelay: %s", err.Error())
+				}
+				if math.IsNaN(delay) {
+					return decimal.Zero, nil
 				}
 				return decimal.NewFromInt(int64(delay)), nil
 			},

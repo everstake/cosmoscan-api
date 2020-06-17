@@ -339,20 +339,54 @@ paths:
               schema:
                 type: object
                 properties:
+                  total_staking_balance:
+                    type: array
+                    items:
+                      type: number
                   number_delegators:
-                    $ref: '#/components/schemas/stats'
+                    type: array
+                    items:
+                      type: number
                   number_multi_delegators:
-                    $ref: '#/components/schemas/stats'
+                    type: array
+                    items:
+                      type: number
                   transfer_volume:
-                    $ref: '#/components/schemas/stats'
+                    type: array
+                    items:
+                      type: number
                   fee_volume:
-                    $ref: '#/components/schemas/stats'
+                    type: array
+                    items:
+                      type: number
                   highest_fee:
-                    $ref: '#/components/schemas/stats'
+                    type: array
+                    items:
+                      type: number
                   undelegation_volume:
-                    $ref: '#/components/schemas/stats'
+                    type: array
+                    items:
+                      type: number
                   block_delay:
-                    $ref: '#/components/schemas/stats'
+                    type: array
+                    items:
+                      type: number
+                  total_accounts:
+                    type: array
+                    items:
+                      type: number
+                  total_whale_accounts:
+                    type: array
+                    items:
+                      type: number
+                  total_small_accounts:
+                    type: array
+                    items:
+                      type: number
+                  total_jailers:
+                    type: array
+                    items:
+                      type: number
   /staking/pie:
     get:
       tags:
@@ -393,21 +427,3 @@ components:
             type: number
       example:
         [{time: 1591258057, value: "32.32"}, {time: 1591258052, value: "5"}]
-    stats:
-      type: object
-      properties:
-        rst_value_1d:
-          type: number
-        rst_value_7d:
-          type: number
-        rst_value_30d:
-          type: number
-        rst_value_90d:
-          type: number
-      example: {
-        rst_value_1d: 32.42,
-        rst_value_7d: 4.4,
-        rst_value_30d: 111,
-        rst_value_90d: 2,
-      }
-
