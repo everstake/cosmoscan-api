@@ -62,10 +62,10 @@ func (m DB) GetAccounts(filter filters.Accounts) (accounts []dmodels.Account, er
 
 func (m DB) GetAccountsTotal(filter filters.Accounts) (total uint64, err error) {
 	q := squirrel.Select("count(*) as total").From(dmodels.AccountsTable)
-	if filter.GtTotalAmount.IsZero() {
+	if !filter.GtTotalAmount.IsZero() {
 		q = q.Where(squirrel.Gt{"acc_balance + acc_stake + acc_unbonding": filter.GtTotalAmount})
 	}
-	if filter.LtTotalAmount.IsZero() {
+	if !filter.LtTotalAmount.IsZero() {
 		q = q.Where(squirrel.Lt{"acc_balance + acc_stake + acc_unbonding": filter.LtTotalAmount})
 	}
 	err = m.first(&total, q)

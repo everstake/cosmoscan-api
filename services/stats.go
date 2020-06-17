@@ -51,7 +51,7 @@ func (s *ServiceFacade) getStates(filter filters.Stats) (map[string][]decimal.De
 	if filter.To.IsZero() {
 		filter.To = dmodels.NewTime(time.Now())
 	}
-	filter.From = dmodels.NewTime(filter.To.Add(time.Hour * 24 * 7))
+	filter.From = dmodels.NewTime(filter.To.Add(-time.Hour * 24 * 7))
 	stats, err := s.dao.GetStats(filter)
 	if err != nil {
 		return nil, fmt.Errorf("dao.GetStats: %s", err.Error())
