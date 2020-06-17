@@ -88,6 +88,40 @@ type (
 			} `json:"entries"`
 		} `json:"result"`
 	}
+	ProposalsResult struct {
+		Height uint64 `json:"height,string"`
+		Result []struct {
+			Content struct {
+				Type  string `json:"type"`
+				Value struct {
+					Title       string `json:"title"`
+					Description string `json:"description"`
+				} `json:"value"`
+			} `json:"content"`
+			ID               uint64 `json:"id,string"`
+			ProposalStatus   string `json:"proposal_status"`
+			FinalTallyResult struct {
+				Yes        int64 `json:"yes,string"`
+				Abstain    int64 `json:"abstain,string"`
+				No         int64 `json:"no,string"`
+				NoWithVeto int64 `json:"no_with_veto,string"`
+			} `json:"final_tally_result"`
+			SubmitTime     time.Time `json:"submit_time"`
+			DepositEndTime time.Time `json:"deposit_end_time"`
+			TotalDeposit   [] struct {
+				Amount decimal.Decimal `json:"amount"`
+			} `json:"total_deposit"`
+			VotingStartTime time.Time `json:"voting_start_time"`
+			VotingEndTime   time.Time `json:"voting_end_time"`
+		} `json:"result"`
+	}
+	ProposalProposer struct {
+		Height uint64 `json:"height,string"`
+		Result struct {
+			ProposalID uint64 `json:"proposal_id,string"`
+			Proposer   string `json:"proposer"`
+		} `json:"result"`
+	}
 )
 
 func NewAPI(cfg config.Config) *API {
@@ -192,6 +226,7 @@ func (api API) GetStake(address string) (amount decimal.Decimal, err error) {
 	}
 	return shares.Div(PrecisionDiv), nil
 }
+
 func (api API) GetUnbonding(address string) (amount decimal.Decimal, err error) {
 	var result UnbondingResult
 	err = api.request(fmt.Sprintf("/staking/delegators/%s/unbonding_delegations", address), &result)
@@ -205,6 +240,23 @@ func (api API) GetUnbonding(address string) (amount decimal.Decimal, err error) 
 	}
 	amount = amount.Div(PrecisionDiv)
 	return amount, nil
+}
+
+func (api API) GetProposals() (proposals ProposalsResult, err error) {
+	err = api.request("/gov/proposals", &proposals)
+	if err != nil {
+		return proposals, fmt.Errorf("request: %s", err.Error())
+	}
+	return proposals, nil
+}
+
+func (api API) GetProposalProposer(id uint64) (address string, err error) {
+	var result ProposalProposer
+	err = api.request(fmt.Sprintf("/gov/proposals/%d/proposer", id), &result)
+	if err != nil {
+		return address, fmt.Errorf("request: %s", err.Error())
+	}
+	return result.Result.Proposer, nil
 }
 
 func (r *AmountResult) Amount() decimal.Decimal {

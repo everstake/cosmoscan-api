@@ -4,6 +4,7 @@ import (
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
 	"github.com/everstake/cosmoscan-api/dao/filters"
+	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/services/cmc"
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
@@ -30,6 +31,8 @@ type (
 		MakeUpdateBalances()
 		GetSizeOfNode() (size float64, err error)
 		MakeStats()
+		UpdateProposals()
+		GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)
@@ -43,6 +46,8 @@ type (
 		GetBalance(address string) (amount decimal.Decimal, err error)
 		GetStake(address string) (amount decimal.Decimal, err error)
 		GetUnbonding(address string) (amount decimal.Decimal, err error)
+		GetProposals() (proposals node.ProposalsResult, err error)
+		GetProposalProposer(id uint64) (proposer string, err error)
 	}
 
 	ServiceFacade struct {

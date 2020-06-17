@@ -330,6 +330,13 @@ paths:
     get:
       tags:
         - Services
+      parameters:
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
       summary: Get network stats
       responses:
         200:
@@ -414,6 +421,66 @@ paths:
                         value:
                           type: number
                 example: {total: 4321, parts: [{title: everstake, value: 123}]}
+  /proposals:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      summary: Get proposals
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    proposer:
+                      type: string
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    status:
+                      type: string
+                    votes_yes:
+                      type: number
+                    votes_abstain:
+                      type: number
+                    votes_no:
+                      type: number
+                    votes_no_with_veto:
+                      type: number
+                    submit_time:
+                      type: number
+                    deposit_end_time:
+                      type: number
+                    total_deposits:
+                      type: number
+                    voting_start_time:
+                      type: number
+                    voting_end_time:
+                      type: number
+
 components:
   schemas:
     agg_item:

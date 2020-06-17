@@ -30,6 +30,9 @@ type (
 		GetAccount(address string) (account dmodels.Account, err error)
 		GetAccounts(filter filters.Accounts) (accounts []dmodels.Account, err error)
 		GetAccountsTotal(filter filters.Accounts) (total uint64, err error)
+		CreateProposals(proposals []dmodels.Proposal) error
+		GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal, err error)
+		UpdateProposal(proposal dmodels.Proposal) error
 	}
 	Clickhouse interface {
 		CreateBlocks(blocks []dmodels.Block) error
@@ -54,8 +57,6 @@ type (
 		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		CreateDelegatorRewards(rewards []dmodels.DelegatorReward) error
 		CreateValidatorRewards(rewards []dmodels.ValidatorReward) error
-		CreateProposals(proposals []dmodels.Proposal) error
-		GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal, err error)
 		CreateProposalDeposits(deposits []dmodels.ProposalDeposit) error
 		CreateProposalVotes(votes []dmodels.ProposalVote) error
 		CreateHistoricalStates(states []dmodels.HistoricalState) error

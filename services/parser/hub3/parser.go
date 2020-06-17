@@ -13,7 +13,6 @@ import (
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/shopspring/decimal"
 	"math"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -288,7 +287,6 @@ func (p *Parser) runWorker() {
 							case WithdrawValidatorCommissionMsg:
 								err = p.parseWithdrawValidatorCommissionMsg(i, tx, msg.Value)
 							case SubmitProposalMsg:
-								err = p.parseSubmitProposalMsg(i, tx, msg.Value)
 							case DepositMsg:
 								err = p.parseDepositMsg(i, tx, msg.Value)
 							case VoteMsg:
@@ -496,48 +494,48 @@ func (p *Parser) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte)
 	return nil
 }
 
-func (p *Parser) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error) {
-	var m MsgSubmitProposal
-	err = json.Unmarshal(data, &m)
-	if err != nil {
-		return fmt.Errorf("json.Unmarshal: %s", err.Error())
-	}
-	var id uint64
-	for _, event := range tx.Events {
-		if event.Type == "submit_proposal" {
-			for _, att := range event.Attributes {
-				if att.Key == "proposal_id" {
-					id, err = strconv.ParseUint(att.Value, 10, 64)
-					if err != nil {
-						return fmt.Errorf("strconv.ParseUint: %s", err.Error())
-					}
-				}
-			}
-		}
-	}
-	if id == 0 {
-		return fmt.Errorf("not found proposal_id")
-	}
-	amount, err := calculateAmount(m.Content.Value.Amount)
-	if err != nil {
-		return fmt.Errorf("calculateAmount: %s", err.Error())
-	}
-	initDeposit, err := calculateAmount(m.InitialDeposit)
-	if err != nil {
-		return fmt.Errorf("calculateAmount: %s", err.Error())
-	}
-	p.data.proposals = append(p.data.proposals, dmodels.Proposal{
-		ID:          id,
-		Title:       m.Content.Value.Title,
-		Description: m.Content.Value.Description,
-		Recipient:   m.Content.Value.Recipient,
-		Amount:      amount,
-		InitDeposit: initDeposit,
-		Proposer:    m.Proposer,
-		CreatedAt:   tx.Timestamp,
-	})
-	return nil
-}
+//func (p *Parser) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error) {
+//	var m MsgSubmitProposal
+//	err = json.Unmarshal(data, &m)
+//	if err != nil {
+//		return fmt.Errorf("json.Unmarshal: %s", err.Error())
+//	}
+//	var id uint64
+//	for _, event := range tx.Events {
+//		if event.Type == "submit_proposal" {
+//			for _, att := range event.Attributes {
+//				if att.Key == "proposal_id" {
+//					id, err = strconv.ParseUint(att.Value, 10, 64)
+//					if err != nil {
+//						return fmt.Errorf("strconv.ParseUint: %s", err.Error())
+//					}
+//				}
+//			}
+//		}
+//	}
+//	if id == 0 {
+//		return fmt.Errorf("not found proposal_id")
+//	}
+//	amount, err := calculateAmount(m.Content.Value.Amount)
+//	if err != nil {
+//		return fmt.Errorf("calculateAmount: %s", err.Error())
+//	}
+//	initDeposit, err := calculateAmount(m.InitialDeposit)
+//	if err != nil {
+//		return fmt.Errorf("calculateAmount: %s", err.Error())
+//	}
+//	p.data.proposals = append(p.data.proposals, dmodels.Proposal{
+//		ID:          id,
+//		Title:       m.Content.Value.Title,
+//		Description: m.Content.Value.Description,
+//		Recipient:   m.Content.Value.Recipient,
+//		Amount:      amount,
+//		InitDeposit: initDeposit,
+//		Proposer:    m.Proposer,
+//		CreatedAt:   tx.Timestamp,
+//	})
+//	return nil
+//}
 
 func (p *Parser) parseVoteMsg(index int, tx Tx, data []byte) (err error) {
 	var m MsgVote

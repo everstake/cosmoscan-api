@@ -1,6 +1,7 @@
 package filters
 
 type Proposals struct {
-	Limit uint64
-	Offset uint64
+	ID     []uint64 `schema:"id"`
+	Limit  uint64   `schema:"limit"`
+	Offset uint64   `schema:"offset"`
 }

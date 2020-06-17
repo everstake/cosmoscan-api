@@ -54,6 +54,28 @@ create index accounts_acc_created_at_index
     on accounts (acc_created_at);
 
 
+create table proposals
+(
+    pro_id                 int                                                           not null
+        primary key,
+    pro_proposer           varchar(255)                                                  not null,
+    pro_title              varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci not null,
+    pro_description        text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci         null,
+    pro_status             varchar(255)                                                  null,
+    pro_votes_yes          decimal(20, 8) default 0.00000000                             not null,
+    pro_votes_abstain      decimal(20, 8) default 0.00000000                             not null,
+    pro_votes_no           decimal(20, 8) default 0.00000000                             not null,
+    pro_votes_no_with_veto decimal(20, 8)                                                not null,
+    pro_submit_time        datetime                                                      not null,
+    pro_deposit_end_time   datetime                                                      not null,
+    pro_total_deposits     decimal(20, 8) default 0.00000000                             not null,
+    pro_voting_start_time  datetime                                                      not null,
+    pro_voting_end_time    datetime                                                      not null
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_general_ci;
+
+
 -- +migrate Down
 drop table parsers;
 drop table validators;

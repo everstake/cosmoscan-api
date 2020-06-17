@@ -67,7 +67,33 @@ func GetGenesisState() (state Genesis, err error) {
 	if err != nil {
 		return state, fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
+
 	return state, nil
+}
+
+func ShowGenesisStructure() {
+	resp, _ := http.Get(genesisJson)
+	data, _ := ioutil.ReadAll(resp.Body)
+	var value interface{}
+	_ = json.Unmarshal(data, &value)
+	printStruct(value, 0)
+}
+
+func printStruct(field interface{}, i int) {
+	mp, ok := field.(map[string]interface{})
+	if ok {
+		if len(mp) > 50 {
+			return
+		}
+		for title, f := range mp {
+			var str string
+			for k := 0; k < i; k++ {
+				str = str + " "
+			}
+			fmt.Println(str + title)
+			printStruct(f, i+1)
+		}
+	}
 }
 
 func (p *Parser) parseGenesisState() error {
