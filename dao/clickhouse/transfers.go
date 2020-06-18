@@ -16,7 +16,7 @@ func (db DB) CreateTransfers(transfers []dmodels.Transfer) error {
 	q := squirrel.Insert(dmodels.TransfersTable).Columns("trf_id", "trf_tx_hash", "trf_from", "trf_to", "trf_amount", "trf_created_at")
 	for _, transfer := range transfers {
 		if transfer.ID == "" {
-			return fmt.Errorf("field ID can not be empty")
+			return fmt.Errorf("field ProposalID can not be empty")
 		}
 		if transfer.TxHash == "" {
 			return fmt.Errorf("field TxHash can not be empty")

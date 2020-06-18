@@ -20,8 +20,6 @@ type (
 		Clickhouse            Clickhouse `json:"clickhouse"`
 		Parser                Parser     `json:"parser"`
 		CMCKey                string     `json:"cmc_key"`
-		ECDSAPublicKeyBase64  string     `json:"ecdsa_public_key_base64"`
-		ECDSAPrivateKeyBase64 string     `json:"ecdsa_private_key_base64"`
 	}
 	Parser struct {
 		Node     string `json:"node"`

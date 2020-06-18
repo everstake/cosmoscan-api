@@ -15,7 +15,7 @@ func (db DB) CreateBlocks(blocks []dmodels.Block) error {
 	q := squirrel.Insert(dmodels.BlocksTable).Columns("blk_id", "blk_hash", "blk_proposer", "blk_created_at")
 	for _, block := range blocks {
 		if block.ID == 0 {
-			return fmt.Errorf("field ID can not be 0")
+			return fmt.Errorf("field ProposalID can not be 0")
 		}
 		if block.Hash == "" {
 			return fmt.Errorf("hash can not be empty")

@@ -36,9 +36,9 @@ type Genesis struct {
 				Shares           decimal.Decimal `json:"shares"`
 				ValidatorAddress string          `json:"validator_address"`
 			} `json:"delegations"`
-			Redelegations [] struct {
+			Redelegations []struct {
 				DelegatorAddress string `json:"delegator_address"`
-				Entries          [] struct {
+				Entries          []struct {
 					SharesDst decimal.Decimal `json:"shares_dst"`
 				} `json:"entries"`
 				ValidatorDstAddress string `json:"validator_dst_address"`
@@ -108,7 +108,6 @@ func (p *Parser) parseGenesisState() error {
 	var (
 		delegations []dmodels.Delegation
 		accounts    []dmodels.Account
-		validators  []dmodels.Validator
 	)
 	for i, delegation := range state.AppState.Staking.Delegations {
 		delegations = append(delegations, dmodels.Delegation{
@@ -147,25 +146,6 @@ func (p *Parser) parseGenesisState() error {
 			Stake:     accountDelegation[account.Address],
 			CreatedAt: t,
 		})
-	}
-
-	for _, validator := range state.Validators {
-		validators = append(validators, dmodels.Validator{
-			ConsAddress: validator.Address,
-			Name:        validator.Name,
-			CreatedAt:   t,
-		})
-	}
-
-	for i := 0; i < len(validators); i += saveGenesisBatch {
-		endOfPart := i + saveGenesisBatch
-		if i+saveGenesisBatch > len(validators) {
-			endOfPart = len(validators)
-		}
-		err := p.dao.CreateValidators(validators[i:endOfPart])
-		if err != nil {
-			return fmt.Errorf("dao.CreateValidators: %s", err.Error())
-		}
 	}
 
 	for i := 0; i < len(accounts); i += saveGenesisBatch {

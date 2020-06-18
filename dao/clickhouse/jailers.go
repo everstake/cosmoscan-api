@@ -13,7 +13,7 @@ func (db DB) CreateJailers(jailers []dmodels.Jailer) error {
 	q := squirrel.Insert(dmodels.JailersTable).Columns("jlr_id", "jlr_address", "jlr_created_at")
 	for _, jailer := range jailers {
 		if jailer.ID == "" {
-			return fmt.Errorf("field ID can not be empty")
+			return fmt.Errorf("field ProposalID can not be empty")
 		}
 		if jailer.Address == "" {
 			return fmt.Errorf("field Address can not be empty")

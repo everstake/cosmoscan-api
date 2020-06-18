@@ -14,7 +14,7 @@ func (db DB) CreateStats(stats []dmodels.Stat) (err error) {
 	q := squirrel.Insert(dmodels.StatsTable).Columns("stt_id", "stt_title", "stt_value", "stt_created_at")
 	for _, stat := range stats {
 		if stat.ID == "" {
-			return fmt.Errorf("field ID can not be empty")
+			return fmt.Errorf("field ProposalID can not be empty")
 		}
 		if stat.Title == "" {
 			return fmt.Errorf("field Title can not be empty")

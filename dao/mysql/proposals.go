@@ -14,6 +14,7 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 	q := squirrel.Insert(dmodels.ProposalsTable).Columns(
 		"pro_id",
 		"pro_proposer",
+		"pro_type",
 		"pro_title",
 		"pro_description",
 		"pro_status",
@@ -26,15 +27,19 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 		"pro_total_deposits",
 		"pro_voting_start_time",
 		"pro_voting_end_time",
+		"pro_voters",
+		"pro_participation_rate",
+		"pro_activity",
 	)
 	for _, p := range proposals {
 		if p.ID == 0 {
-			return fmt.Errorf("invalid ID")
+			return fmt.Errorf("invalid ProposalID")
 		}
 
 		q = q.Values(
 			p.ID,
 			p.Proposer,
+			p.Type,
 			p.Title,
 			p.Description,
 			p.Status,
@@ -47,6 +52,9 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 			p.TotalDeposits,
 			p.VotingStartTime,
 			p.VotingEndTime,
+			p.Voters,
+			p.ParticipationRate,
+			p.Activity,
 		)
 	}
 	_, err := m.insert(q)
@@ -73,6 +81,7 @@ func (m DB) UpdateProposal(proposal dmodels.Proposal) error {
 		Where(squirrel.Eq{"pro_id": proposal.ID}).
 		SetMap(map[string]interface{}{
 			"pro_proposer":           proposal.Proposer,
+			"pro_type":               proposal.Type,
 			"pro_title":              proposal.Title,
 			"pro_description":        proposal.Description,
 			"pro_status":             proposal.Status,
@@ -85,6 +94,9 @@ func (m DB) UpdateProposal(proposal dmodels.Proposal) error {
 			"pro_total_deposits":     proposal.TotalDeposits,
 			"pro_voting_start_time":  proposal.VotingStartTime,
 			"pro_voting_end_time":    proposal.VotingEndTime,
+			"pro_voters":             proposal.Voters,
+			"pro_participation_rate": proposal.ParticipationRate,
+			"pro_activity":           proposal.Activity,
 		})
 	return m.update(q)
 }

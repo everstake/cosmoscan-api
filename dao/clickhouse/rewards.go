@@ -13,7 +13,7 @@ func (db DB) CreateDelegatorRewards(rewards []dmodels.DelegatorReward) error {
 	q := squirrel.Insert(dmodels.DelegatorRewardsTable).Columns("der_id", "der_tx_hash", "der_delegator", "der_validator", "der_amount", "der_created_at")
 	for _, reward := range rewards {
 		if reward.ID == "" {
-			return fmt.Errorf("field ID can not be empty")
+			return fmt.Errorf("field ProposalID can not be empty")
 		}
 		if reward.TxHash == "" {
 			return fmt.Errorf("field TxHash can not be empty")
@@ -39,7 +39,7 @@ func (db DB) CreateValidatorRewards(rewards []dmodels.ValidatorReward) error {
 	q := squirrel.Insert(dmodels.ValidatorRewardsTable).Columns("var_id", "var_tx_hash", "var_address", "var_amount", "var_created_at")
 	for _, reward := range rewards {
 		if reward.ID == "" {
-			return fmt.Errorf("field ID can not be empty")
+			return fmt.Errorf("field ProposalID can not be empty")
 		}
 		if reward.TxHash == "" {
 			return fmt.Errorf("field TxHash can not be empty")

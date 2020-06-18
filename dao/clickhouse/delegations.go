@@ -16,7 +16,7 @@ func (db DB) CreateDelegations(delegations []dmodels.Delegation) error {
 	q := squirrel.Insert(dmodels.DelegationsTable).Columns("dlg_id", "dlg_tx_hash", "dlg_delegator", "dlg_validator", "dlg_amount", "dlg_created_at")
 	for _, delegation := range delegations {
 		if delegation.ID == "" {
-			return fmt.Errorf("field ID can not be empty")
+			return fmt.Errorf("field ProposalID can not be empty")
 		}
 		if delegation.TxHash == "" {
 			return fmt.Errorf("field TxHash can not be empty")

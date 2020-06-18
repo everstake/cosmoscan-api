@@ -25,7 +25,5 @@
     "batch": 500,
     "fetchers": 5
   },
-  "cmc_key": "",
-  "ecdsa_private_key_base64": "",
-  "ecdsa_public_key_base64": ""
+  "cmc_key": ""
 }

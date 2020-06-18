@@ -354,7 +354,15 @@ paths:
                     type: array
                     items:
                       type: number
+                  total_number_delegators:
+                    type: array
+                    items:
+                      type: number
                   number_multi_delegators:
+                    type: array
+                    items:
+                      type: number
+                  total_number_multi_delegators:
                     type: array
                     items:
                       type: number
@@ -480,6 +488,12 @@ paths:
                       type: number
                     voting_end_time:
                       type: number
+                    pro_voters:
+                      type: number
+                    pro_participation_rate:
+                      type: number
+                    pro_activity:
+                      $ref: '#/components/schemas/agg_item'
 
 components:
   schemas:

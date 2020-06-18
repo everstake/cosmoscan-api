@@ -13,19 +13,21 @@ import (
 )
 
 const (
-	StatsTotalStakingBalance   = "total_staking_balance"
-	StatsNumberDelegators      = "number_delegators"
-	StatsNumberMultiDelegators = "number_multi_delegators"
-	StatsTransfersVolume       = "transfer_volume"
-	StatsFeeVolume             = "fee_volume"
-	StatsHighestFee            = "highest_fee"
-	StatsUndelegationVolume    = "undelegation_volume"
-	StatsBlockDelay            = "block_delay"
-	StatsNetworkSize           = "network_size"
-	StatsTotalAccounts         = "total_accounts"
-	StatsTotalWhaleAccounts    = "total_whale_accounts"
-	StatsTotalSmallAccounts    = "total_small_accounts"
-	StatsTotalJailers          = "total_jailers"
+	StatsTotalStakingBalance        = "total_staking_balance"
+	StatsNumberDelegators           = "number_delegators"
+	StatsTotalNumberDelegators      = "total_number_delegators"
+	StatsNumberMultiDelegators      = "number_multi_delegators"
+	StatsTotalNumberMultiDelegators = "total_number_multi_delegators"
+	StatsTransfersVolume            = "transfer_volume"
+	StatsFeeVolume                  = "fee_volume"
+	StatsHighestFee                 = "highest_fee"
+	StatsUndelegationVolume         = "undelegation_volume"
+	StatsBlockDelay                 = "block_delay"
+	StatsNetworkSize                = "network_size"
+	StatsTotalAccounts              = "total_accounts"
+	StatsTotalWhaleAccounts         = "total_whale_accounts"
+	StatsTotalSmallAccounts         = "total_small_accounts"
+	StatsTotalJailers               = "total_jailers"
 )
 
 func (s *ServiceFacade) GetNetworkStates(filter filters.Stats) (map[string][]decimal.Decimal, error) {
@@ -43,6 +45,8 @@ func (s *ServiceFacade) GetNetworkStates(filter filters.Stats) (map[string][]dec
 		StatsTotalWhaleAccounts,
 		StatsTotalSmallAccounts,
 		StatsTotalJailers,
+		StatsTotalNumberDelegators,
+		StatsTotalNumberMultiDelegators,
 	}
 	return s.getStates(filter)
 }
@@ -96,12 +100,32 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
+			title: StatsTotalNumberDelegators,
+			fetch: func() (value decimal.Decimal, err error) {
+				total, err := s.dao.GetDelegatorsTotal(filters.TimeRange{})
+				if err != nil {
+					return value, fmt.Errorf("dao.GetDelegatorsTotal: %s", err.Error())
+				}
+				return decimal.NewFromInt(int64(total)), nil
+			},
+		},
+		{
 			title: StatsNumberMultiDelegators,
 			fetch: func() (value decimal.Decimal, err error) {
 				total, err := s.dao.GetMultiDelegatorsTotal(filters.TimeRange{
 					From: dmodels.NewTime(startOfYesterday),
 					To:   dmodels.NewTime(startOfToday),
 				})
+				if err != nil {
+					return value, fmt.Errorf("dao.GetMultiDelegatorsTotal: %s", err.Error())
+				}
+				return decimal.NewFromInt(int64(total)), nil
+			},
+		},
+		{
+			title: StatsTotalNumberMultiDelegators,
+			fetch: func() (value decimal.Decimal, err error) {
+				total, err := s.dao.GetMultiDelegatorsTotal(filters.TimeRange{})
 				if err != nil {
 					return value, fmt.Errorf("dao.GetMultiDelegatorsTotal: %s", err.Error())
 				}

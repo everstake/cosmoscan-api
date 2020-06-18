@@ -13,7 +13,7 @@ func (db DB) CreateProposalDeposits(deposits []dmodels.ProposalDeposit) error {
 	q := squirrel.Insert(dmodels.ProposalDepositsTable).Columns("prd_id", "prd_proposal_id", "prd_depositor", "prd_amount", "prd_created_at")
 	for _, deposit := range deposits {
 		if deposit.ID == "" {
-			return fmt.Errorf("field ID can not be empty")
+			return fmt.Errorf("field ProposalID can not be empty")
 		}
 		if deposit.ProposalID == 0 {
 			return fmt.Errorf("field ProposalID can not be zero")

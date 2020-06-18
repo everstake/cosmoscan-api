@@ -525,7 +525,7 @@ func (p *Parser) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte)
 //		return fmt.Errorf("calculateAmount: %s", err.Error())
 //	}
 //	p.data.proposals = append(p.data.proposals, dmodels.Proposal{
-//		ID:          id,
+//		ProposalID:          id,
 //		Title:       m.Content.Value.Title,
 //		Description: m.Content.Value.Description,
 //		Recipient:   m.Content.Value.Recipient,
@@ -548,6 +548,7 @@ func (p *Parser) parseVoteMsg(index int, tx Tx, data []byte) (err error) {
 		ID:         id,
 		ProposalID: m.ProposalID,
 		Voter:      m.Voter,
+		TxHash:     tx.Hash,
 		Option:     m.Option,
 		CreatedAt:  tx.Timestamp,
 	})
