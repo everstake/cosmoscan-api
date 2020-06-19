@@ -100,9 +100,7 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 				return state, fmt.Errorf("not found USD quote")
 			}
 			state.Price = quote.Price.Truncate(8)
-			if !state.Price.IsZero() {
-				state.MarketCap = state.CirculatingSupply.Div(state.Price).Truncate(2)
-			}
+			state.MarketCap = state.CirculatingSupply.Mul(state.Price).Truncate(2)
 			state.TradingVolume = quote.Volume24h.Truncate(2)
 			break
 		}

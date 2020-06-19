@@ -482,13 +482,13 @@ paths:
                       type: number
                     voting_end_time:
                       type: number
-                    pro_voters:
+                    voters:
                       type: number
-                    pro_participation_rate:
+                    participation_rate:
                       type: number
                     turnout:
                       type: number
-                    pro_activity:
+                    activity:
                       $ref: '#/components/schemas/agg_item'
 
 components:
