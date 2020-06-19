@@ -456,6 +456,8 @@ paths:
                       type: number
                     proposer:
                       type: string
+                    tx_hash:
+                      type: string
                     title:
                       type: string
                     description:
@@ -483,6 +485,8 @@ paths:
                     pro_voters:
                       type: number
                     pro_participation_rate:
+                      type: number
+                    turnout:
                       type: number
                     pro_activity:
                       $ref: '#/components/schemas/agg_item'
