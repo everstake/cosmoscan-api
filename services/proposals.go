@@ -58,7 +58,7 @@ func (s *ServiceFacade) UpdateProposals() {
 		}
 		participationRate := decimal.Zero
 		if votersTotal != 0 {
-			participationRate = decimal.NewFromFloat(float64(totalAccounts) / float64(votersTotal)).Truncate(2)
+			participationRate = decimal.NewFromFloat(float64(votersTotal) / float64(totalAccounts) * 100).Truncate(2)
 		}
 
 		proposer, err := s.node.GetProposalProposer(p.ID)
