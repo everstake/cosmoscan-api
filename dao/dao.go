@@ -72,6 +72,8 @@ type (
 		GetJailersTotal() (total uint64, err error)
 		CreateStats(stats []dmodels.Stat) (err error)
 		GetStats(filter filters.Stats) (stats []dmodels.Stat, err error)
+		CreateHistoryProposals(proposals []dmodels.HistoryProposal) error
+		GetHistoryProposals(filter filters.HistoryProposals) (proposals []dmodels.HistoryProposal, err error)
 	}
 
 	Cache interface {

@@ -44,6 +44,12 @@ func (s *ServiceFacade) UpdateProposals() {
 		validatorsMap[accAddress.String()] = validator
 	}
 
+	totalStake, err := s.node.GetStakingPool()
+	if err != nil {
+		log.Error("UpdateProposals: node.GetStakingPool: %s", err.Error())
+		return
+	}
+
 	for _, p := range nodeProposals.Result {
 		votersTotal, err := s.dao.GetProposalVotesTotal(filters.ProposalVotes{ProposalID: []uint64{p.ID}})
 		if err != nil {
@@ -78,24 +84,47 @@ func (s *ServiceFacade) UpdateProposals() {
 		}, []uint64{p.ID})
 		activityJson, _ := json.Marshal(activityItems)
 
+		hps, err := s.dao.GetHistoryProposals(filters.HistoryProposals{ID: []uint64{p.ID}})
+		if err != nil {
+			log.Error("UpdateProposals: dao.GetHistoryProposals: %s", err.Error())
+			return
+		}
+		var txHash string
+		if len(hps) > 0 {
+			txHash = hps[0].TxHash
+		}
+
+		yes := decimal.NewFromInt(p.FinalTallyResult.Yes).Div(node.PrecisionDiv)
+		abstain := decimal.NewFromInt(p.FinalTallyResult.Abstain).Div(node.PrecisionDiv)
+		no := decimal.NewFromInt(p.FinalTallyResult.No).Div(node.PrecisionDiv)
+		noWithVeto := decimal.NewFromInt(p.FinalTallyResult.NoWithVeto).Div(node.PrecisionDiv)
+
+		turnout := decimal.Zero
+		if !totalStake.Result.BondedTokens.IsZero() {
+			turnout = yes.Add(abstain).Add(no).Add(noWithVeto).Div(totalStake.Result.BondedTokens)
+			turnout = turnout.Mul(decimal.NewFromFloat(100)).Truncate(2)
+		}
+
 		proposal := dmodels.Proposal{
 			ID:                p.ID,
+			TxHash:            txHash,
 			Proposer:          proposer,
 			Type:              p.Content.Type,
 			Title:             p.Content.Value.Title,
 			Description:       p.Content.Value.Description,
 			Status:            p.ProposalStatus,
-			VotesYes:          decimal.NewFromInt(p.FinalTallyResult.Yes).Div(node.PrecisionDiv),
-			VotesAbstain:      decimal.NewFromInt(p.FinalTallyResult.Abstain).Div(node.PrecisionDiv),
-			VotesNo:           decimal.NewFromInt(p.FinalTallyResult.No).Div(node.PrecisionDiv),
-			VotesNoWithVeto:   decimal.NewFromInt(p.FinalTallyResult.NoWithVeto).Div(node.PrecisionDiv),
-			SubmitTime:        p.SubmitTime,
-			DepositEndTime:    p.DepositEndTime,
+			VotesYes:          yes,
+			VotesAbstain:      abstain,
+			VotesNo:           no,
+			VotesNoWithVeto:   noWithVeto,
+			SubmitTime:        dmodels.NewTime(p.SubmitTime),
+			DepositEndTime:    dmodels.NewTime(p.DepositEndTime),
 			TotalDeposits:     totalDeposit.Div(node.PrecisionDiv),
-			VotingStartTime:   p.VotingStartTime,
-			VotingEndTime:     p.VotingEndTime,
+			VotingStartTime:   dmodels.NewTime(p.VotingStartTime),
+			VotingEndTime:     dmodels.NewTime(p.VotingEndTime),
 			Voters:            votersTotal,
 			ParticipationRate: participationRate,
+			Turnout:           turnout,
 			Activity:          activityJson,
 		}
 		if len(proposals) == 0 {

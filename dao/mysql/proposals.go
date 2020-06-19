@@ -13,6 +13,7 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 	}
 	q := squirrel.Insert(dmodels.ProposalsTable).Columns(
 		"pro_id",
+		"pro_tx_hash",
 		"pro_proposer",
 		"pro_type",
 		"pro_title",
@@ -29,6 +30,7 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 		"pro_voting_end_time",
 		"pro_voters",
 		"pro_participation_rate",
+		"pro_turnout",
 		"pro_activity",
 	)
 	for _, p := range proposals {
@@ -38,6 +40,7 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 
 		q = q.Values(
 			p.ID,
+			p.TxHash,
 			p.Proposer,
 			p.Type,
 			p.Title,
@@ -54,6 +57,7 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 			p.VotingEndTime,
 			p.Voters,
 			p.ParticipationRate,
+			p.Turnout,
 			p.Activity,
 		)
 	}
@@ -81,6 +85,7 @@ func (m DB) UpdateProposal(proposal dmodels.Proposal) error {
 		Where(squirrel.Eq{"pro_id": proposal.ID}).
 		SetMap(map[string]interface{}{
 			"pro_proposer":           proposal.Proposer,
+			"pro_tx_hash":            proposal.TxHash,
 			"pro_type":               proposal.Type,
 			"pro_title":              proposal.Title,
 			"pro_description":        proposal.Description,
@@ -96,6 +101,7 @@ func (m DB) UpdateProposal(proposal dmodels.Proposal) error {
 			"pro_voting_end_time":    proposal.VotingEndTime,
 			"pro_voters":             proposal.Voters,
 			"pro_participation_rate": proposal.ParticipationRate,
+			"pro_turnout":            proposal.Turnout,
 			"pro_activity":           proposal.Activity,
 		})
 	return m.update(q)

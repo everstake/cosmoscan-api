@@ -53,9 +53,9 @@ func (db DB) GetProposalVotesTotal(filter filters.ProposalVotes) (total uint64, 
 }
 
 func (db DB) GetAggProposalVotes(filter filters.Agg, id []uint64) (items []smodels.AggItem, err error) {
-	q := filter.BuildQuery("count(*)", "prv_created_at", dmodels.ProposalVotesTable)
+	q := filter.BuildQuery("toDecimal64(count(*), 0)", "prv_created_at", dmodels.ProposalVotesTable)
 	if len(id) != 0 {
-		q = q.Where(squirrel.Eq{"prv_id": id})
+		q = q.Where(squirrel.Eq{"prv_proposal_id": id})
 	}
 	err = db.Find(&items, q)
 	return items, err

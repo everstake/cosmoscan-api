@@ -35,7 +35,9 @@ func (s *ServiceFacade) GetMetaData() (meta smodels.MetaData, err error) {
 		for _, validator := range validators {
 			avgFee = avgFee.Add(validator.Commission.CommissionRates.Rate)
 		}
-		meta.ValidatorAvgFee = avgFee.Div(decimal.New(int64(len(validators)), 0)).Mul(decimal.New(100, 0))
+		if len(validators) > 0 {
+			meta.ValidatorAvgFee = avgFee.Div(decimal.New(int64(len(validators)), 0)).Mul(decimal.New(100, 0))
+		}
 		for _, validator := range validators {
 			pk, err := types.GetPubKeyFromBech32(types.Bech32PubKeyTypeConsPub, validator.ConsensusPubkey)
 			if err != nil {

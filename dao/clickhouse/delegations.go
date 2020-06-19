@@ -50,19 +50,21 @@ func (db DB) GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggI
 }
 
 func (db DB) GetDelegatorsTotal(filter filters.TimeRange) (total uint64, err error) {
-	q := squirrel.Select("count(DISTINCT dlg_delegator) as total").From(dmodels.DelegationsTable)
-	q = filter.Query("dlg_created_at", q)
+	q1 := squirrel.Select("dlg_delegator as delegator", "sum(dlg_amount) as amount").
+		From(dmodels.DelegationsTable).GroupBy("dlg_delegator").
+		Having(squirrel.Gt{"amount": 0})
+	q1 = filter.Query("dlg_created_at", q1)
+	q := squirrel.Select("count(t.*) as total").FromSelect(q1, "t")
 	err = db.FindFirst(&total, q)
 	return total, err
 }
 
 func (db DB) GetMultiDelegatorsTotal(filter filters.TimeRange) (total uint64, err error) {
-	q1 := squirrel.Select("count(dlg_validator) as validators").
-		From(dmodels.DelegationsTable).
-		GroupBy("dlg_delegator")
+	q1 := squirrel.Select("dlg_delegator as delegator", "sum(dlg_amount) as amount", "count(DISTINCT dlg_validator) as validators_count").
+		From(dmodels.DelegationsTable).GroupBy("dlg_delegator").
+		Having(squirrel.Gt{"amount": 0}).Having(squirrel.Gt{"validators_count": 1})
 	q1 = filter.Query("dlg_created_at", q1)
-	q := squirrel.Select("count(*) as total").FromSelect(q1, "t").
-		Where(squirrel.Gt{"t.validators": 2})
+	q := squirrel.Select("count(t.*) as total").FromSelect(q1, "t")
 	err = db.FindFirst(&total, q)
 	return total, err
 }

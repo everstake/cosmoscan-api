@@ -58,6 +58,7 @@ create table proposals
 (
     pro_id                 int                                                           not null
         primary key,
+    pro_tx_hash            varchar(255)                                                  not null,
     pro_proposer           varchar(255)                                                  not null,
     pro_type               varchar(255)                                                  not null,
     pro_title              varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci not null,
@@ -74,6 +75,7 @@ create table proposals
     pro_voting_end_time    datetime                                                      not null,
     pro_voters             int            default 0                                      not null,
     pro_participation_rate decimal(5, 2)  default 0                                      not null,
+    pro_turnout            decimal(20, 8) default 0.00000000                             not null,
     pro_activity           json                                                          not null
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4

@@ -354,15 +354,7 @@ paths:
                     type: array
                     items:
                       type: number
-                  total_number_delegators:
-                    type: array
-                    items:
-                      type: number
                   number_multi_delegators:
-                    type: array
-                    items:
-                      type: number
-                  total_number_multi_delegators:
                     type: array
                     items:
                       type: number
