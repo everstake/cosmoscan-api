@@ -490,7 +490,70 @@ paths:
                       type: number
                     activity:
                       $ref: '#/components/schemas/agg_item'
-
+  /proposals/votes:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: proposal_id
+          in: query
+          required: false
+          schema:
+            type: number
+      summary: Get proposal votes
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    proposal_id:
+                      type: number
+                    voter:
+                      type: string
+                    tx_hash:
+                      type: string
+                    option:
+                      type: string
+                    created_at:
+                      type: number
+                    is_validator:
+                      type: boolean
+                    title:
+                      type: string
+  /proposals/deposits:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: proposal_id
+          in: query
+          required: false
+          schema:
+            type: number
+      summary: Get proposal deposits
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    proposal_id:
+                      type: number
+                    depositor:
+                      type: string
+                    amount:
+                      type: number
+                    created_at:
+                      type: number
 components:
   schemas:
     agg_item:

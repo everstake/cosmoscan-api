@@ -33,6 +33,8 @@ type (
 		MakeStats()
 		UpdateProposals()
 		GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal, err error)
+		GetProposalVotes(filter filters.ProposalVotes) (items []smodels.ProposalVote, err error)
+		GetProposalDeposits(filter filters.ProposalDeposits) (deposits []dmodels.ProposalDeposit, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

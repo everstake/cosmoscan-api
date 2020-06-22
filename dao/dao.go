@@ -58,6 +58,7 @@ type (
 		CreateDelegatorRewards(rewards []dmodels.DelegatorReward) error
 		CreateValidatorRewards(rewards []dmodels.ValidatorReward) error
 		CreateProposalDeposits(deposits []dmodels.ProposalDeposit) error
+		GetProposalDeposits(filter filters.ProposalDeposits) (deposits []dmodels.ProposalDeposit, err error)
 		CreateProposalVotes(votes []dmodels.ProposalVote) error
 		GetProposalVotes(filter filters.ProposalVotes) (votes []dmodels.ProposalVote, err error)
 		GetProposalVotesTotal(filter filters.ProposalVotes) (total uint64, err error)

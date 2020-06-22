@@ -39,6 +39,12 @@ func (db DB) GetProposalVotes(filter filters.ProposalVotes) (votes []dmodels.Pro
 	if len(filter.ProposalID) != 0 {
 		q = q.Where(squirrel.Eq{"prv_proposal_id": filter.ProposalID})
 	}
+	if filter.Limit != 0 {
+		q = q.Limit(filter.Limit)
+	}
+	if filter.Offset != 0 {
+		q = q.Offset(filter.Offset)
+	}
 	err = db.Find(&votes, q)
 	return votes, err
 }

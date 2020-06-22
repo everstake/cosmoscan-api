@@ -22,3 +22,37 @@ func (api *API) GetProposals(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonData(w, resp)
 }
+
+func (api *API) GetProposalVotes(w http.ResponseWriter, r *http.Request) {
+	var filter filters.ProposalVotes
+	err := api.queryDecoder.Decode(&filter, r.URL.Query())
+	if err != nil {
+		log.Debug("API Decode: %s", err.Error())
+		jsonBadRequest(w, "")
+		return
+	}
+	resp, err := api.svc.GetProposalVotes(filter)
+	if err != nil {
+		log.Error("API GetProposalVotes: svc.GetProposalVotes: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
+}
+
+func (api *API) GetProposalDeposits(w http.ResponseWriter, r *http.Request) {
+	var filter filters.ProposalDeposits
+	err := api.queryDecoder.Decode(&filter, r.URL.Query())
+	if err != nil {
+		log.Debug("API Decode: %s", err.Error())
+		jsonBadRequest(w, "")
+		return
+	}
+	resp, err := api.svc.GetProposalDeposits(filter)
+	if err != nil {
+		log.Error("API GetProposalDeposits: svc.GetProposalDeposits: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
+}

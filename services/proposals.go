@@ -8,6 +8,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/everstake/cosmoscan-api/services/node"
+	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
 )
 
@@ -137,4 +138,44 @@ func (s *ServiceFacade) UpdateProposals() {
 			return
 		}
 	}
+}
+
+func (s *ServiceFacade) GetProposalVotes(filter filters.ProposalVotes) (items []smodels.ProposalVote, err error) {
+	votes, err := s.dao.GetProposalVotes(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetProposalVotes: %s", err.Error())
+	}
+	vm, err := s.GetValidatorMap()
+	if err != nil {
+		return nil, fmt.Errorf("GetValidatorMap: %s", err.Error())
+	}
+	validatorsMap := make(map[string]node.Validator)
+	for _, validator := range vm {
+		bench, _ := types.ValAddressFromBech32(validator.OperatorAddress)
+		accAddress := types.AccAddress(bench.Bytes())
+		validatorsMap[accAddress.String()] = validator
+	}
+	for _, vote := range votes {
+		title := vote.Voter
+		var isValidator bool
+		validator, ok := validatorsMap[vote.Voter]
+		if ok {
+			title = validator.Description.Moniker
+			isValidator = ok
+		}
+		items = append(items, smodels.ProposalVote{
+			Title:        title,
+			IsValidator:  isValidator,
+			ProposalVote: vote,
+		})
+	}
+	return items, nil
+}
+
+func (s *ServiceFacade) GetProposalDeposits(filter filters.ProposalDeposits) (deposits []dmodels.ProposalDeposit, err error) {
+	deposits, err = s.dao.GetProposalDeposits(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetProposalDeposits: %s", err.Error())
+	}
+	return deposits,nil
 }

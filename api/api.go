@@ -109,6 +109,8 @@ func (api *API) loadRoutes() {
 		{Path: "/network/stats", Method: http.MethodGet, Func: api.GetNetworkStats},
 		{Path: "/staking/pie", Method: http.MethodGet, Func: api.GetStakingPie},
 		{Path: "/proposals", Method: http.MethodGet, Func: api.GetProposals},
+		{Path: "/proposals/votes", Method: http.MethodGet, Func: api.GetProposalVotes},
+		{Path: "/proposals/deposits", Method: http.MethodGet, Func: api.GetProposalDeposits},
 	})
 
 }

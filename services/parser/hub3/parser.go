@@ -552,7 +552,7 @@ func (p *Parser) parseVoteMsg(index int, tx Tx, data []byte) (err error) {
 		Voter:      m.Voter,
 		TxHash:     tx.Hash,
 		Option:     m.Option,
-		CreatedAt:  tx.Timestamp,
+		CreatedAt:  dmodels.NewTime(tx.Timestamp),
 	})
 	return nil
 }
@@ -578,7 +578,7 @@ func (p *Parser) parseDepositMsg(index int, tx Tx, data []byte) (err error) {
 		ProposalID: m.ProposalID,
 		Depositor:  m.Depositor,
 		Amount:     amount,
-		CreatedAt:  tx.Timestamp,
+		CreatedAt:  dmodels.NewTime(tx.Timestamp),
 	})
 	return nil
 }
