@@ -554,6 +554,37 @@ paths:
                       type: number
                     created_at:
                       type: number
+  /proposals/chart:
+    get:
+      tags:
+        - Services
+      summary: Get proposals chart data
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    proposal_id:
+                      type: number
+                    voters_total:
+                      type: number
+                    validators_total:
+                      type: number
+                    turnout:
+                      type: number
+                    yes_percent:
+                      type: number
+                    no_percent:
+                      type: number
+                    no_with_veto_percent:
+                      type: number
+                    abstain_percent:
+                      type: number
 components:
   schemas:
     agg_item:

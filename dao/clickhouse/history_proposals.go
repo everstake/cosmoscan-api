@@ -53,7 +53,7 @@ func (db DB) GetHistoryProposals(filter filters.HistoryProposals) (proposals []d
 		q = q.Limit(filter.Limit)
 	}
 	if filter.Offset != 0 {
-		q = q.Limit(filter.Offset)
+		q = q.Offset(filter.Offset)
 	}
 	err = db.Find(&proposals, q)
 	return proposals, err

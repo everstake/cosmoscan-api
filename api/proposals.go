@@ -56,3 +56,13 @@ func (api *API) GetProposalDeposits(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonData(w, resp)
 }
+
+func (api *API) GetProposalChartData(w http.ResponseWriter, r *http.Request) {
+	resp, err := api.svc.GetProposalsChartData()
+	if err != nil {
+		log.Error("API GetProposalsChartData: svc.GetProposalsChartData: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
+}

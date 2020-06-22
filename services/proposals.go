@@ -177,5 +177,57 @@ func (s *ServiceFacade) GetProposalDeposits(filter filters.ProposalDeposits) (de
 	if err != nil {
 		return nil, fmt.Errorf("dao.GetProposalDeposits: %s", err.Error())
 	}
-	return deposits,nil
+	return deposits, nil
+}
+
+func (s *ServiceFacade) GetProposalsChartData() (items []smodels.ProposalChartData, err error) {
+	proposals, err := s.dao.GetProposals(filters.Proposals{})
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetProposals: %s", err.Error())
+	}
+	validators, err := s.GetValidatorMap()
+	if err != nil {
+		return nil, fmt.Errorf("GetValidatorMap: %s", err.Error())
+	}
+	validatorsMap := make(map[string]node.Validator)
+	for _, validator := range validators {
+		bench, _ := types.ValAddressFromBech32(validator.OperatorAddress)
+		accAddress := types.AccAddress(bench.Bytes())
+		validatorsMap[accAddress.String()] = validator
+	}
+
+	for _, p := range proposals {
+		votes, err := s.dao.GetProposalVotes(filters.ProposalVotes{ProposalID: []uint64{p.ID}})
+		if err != nil {
+			return nil, fmt.Errorf("dao.GetProposalVotes: %s", err.Error())
+		}
+		var validatorsTotal uint64
+		for _, vote := range votes {
+			_, ok := validatorsMap[vote.Voter]
+			if ok {
+				validatorsTotal++
+			}
+		}
+
+		totalAmount := p.VotesYes.Add(p.VotesNo).Add(p.VotesAbstain).Add(p.VotesNoWithVeto)
+
+		pd := smodels.ProposalChartData{
+			ProposalID:      p.ID,
+			VotersTotal:     uint64(len(votes)),
+			ValidatorsTotal: validatorsTotal,
+			Turnout:         p.Turnout,
+		}
+
+		if !totalAmount.IsZero() {
+			d100 := decimal.New(100, 0)
+			pd.YesPercent = p.VotesYes.Div(totalAmount).Mul(d100).Truncate(2)
+			pd.NoPercent = p.VotesNo.Div(totalAmount).Mul(d100).Truncate(2)
+			pd.NoWithVetoPercent = p.VotesNoWithVeto.Div(totalAmount).Mul(d100).Truncate(2)
+			pd.AbstainPercent = p.VotesAbstain.Div(totalAmount).Mul(d100).Truncate(2)
+		}
+
+		items = append(items, pd)
+	}
+
+	return items, nil
 }

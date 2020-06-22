@@ -288,6 +288,7 @@ func (p *Parser) runWorker() {
 							case WithdrawValidatorCommissionMsg:
 								err = p.parseWithdrawValidatorCommissionMsg(i, tx, msg.Value)
 							case SubmitProposalMsg:
+								err = p.parseSubmitProposalMsg(i, tx, msg.Value)
 							case DepositMsg:
 								err = p.parseDepositMsg(i, tx, msg.Value)
 							case VoteMsg:
