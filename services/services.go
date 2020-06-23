@@ -36,6 +36,7 @@ type (
 		GetProposalVotes(filter filters.ProposalVotes) (items []smodels.ProposalVote, err error)
 		GetProposalDeposits(filter filters.ProposalDeposits) (deposits []dmodels.ProposalDeposit, err error)
 		GetProposalsChartData() (items []smodels.ProposalChartData, err error)
+		GetAggValidators33Power(filter filters.Agg) (items []smodels.AggItem, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

@@ -22,3 +22,7 @@ func (api *API) GetNetworkStats(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonData(w, resp)
 }
+
+func (api *API) GetAggValidators33Power(w http.ResponseWriter, r *http.Request) {
+	api.aggHandler(w, r, api.svc.GetAggValidators33Power)
+}

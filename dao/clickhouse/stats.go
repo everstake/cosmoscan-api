@@ -5,6 +5,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
+	"github.com/everstake/cosmoscan-api/smodels"
 )
 
 func (db DB) CreateStats(stats []dmodels.Stat) (err error) {
@@ -40,4 +41,11 @@ func (db DB) GetStats(filter filters.Stats) (stats []dmodels.Stat, err error) {
 	}
 	err = db.Find(&stats, q)
 	return stats, err
+}
+
+func (db DB) GetAggValidators33Power(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := filter.BuildQuery("max(stt_value)", "stt_created_at", dmodels.StatsTable).
+		Where(squirrel.Eq{"stt_title": dmodels.StatsValidatorsWith33Power})
+	err = db.Find(&items, q)
+	return items, err
 }

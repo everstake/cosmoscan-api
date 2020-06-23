@@ -585,6 +585,37 @@ paths:
                       type: number
                     abstain_percent:
                       type: number
+  /validators/33power/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get count of validators which have more than 33.4% power
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
 components:
   schemas:
     agg_item:

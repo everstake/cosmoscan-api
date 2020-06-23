@@ -7,42 +7,29 @@ import (
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
+	"github.com/everstake/cosmoscan-api/services/node"
+	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
 	"math"
+	"sort"
 	"time"
-)
-
-const (
-	StatsTotalStakingBalance        = "total_staking_balance"
-	StatsNumberDelegators           = "number_delegators"
-	StatsNumberMultiDelegators      = "number_multi_delegators"
-	StatsTransfersVolume            = "transfer_volume"
-	StatsFeeVolume                  = "fee_volume"
-	StatsHighestFee                 = "highest_fee"
-	StatsUndelegationVolume         = "undelegation_volume"
-	StatsBlockDelay                 = "block_delay"
-	StatsNetworkSize                = "network_size"
-	StatsTotalAccounts              = "total_accounts"
-	StatsTotalWhaleAccounts         = "total_whale_accounts"
-	StatsTotalSmallAccounts         = "total_small_accounts"
-	StatsTotalJailers               = "total_jailers"
 )
 
 func (s *ServiceFacade) GetNetworkStates(filter filters.Stats) (map[string][]decimal.Decimal, error) {
 	filter.Titles = []string{
-		StatsTotalStakingBalance,
-		StatsNumberDelegators,
-		StatsNumberMultiDelegators,
-		StatsTransfersVolume,
-		StatsFeeVolume,
-		StatsHighestFee,
-		StatsUndelegationVolume,
-		StatsBlockDelay,
-		StatsNetworkSize,
-		StatsTotalAccounts,
-		StatsTotalWhaleAccounts,
-		StatsTotalSmallAccounts,
-		StatsTotalJailers,
+		dmodels.StatsTotalStakingBalance,
+		dmodels.StatsNumberDelegators,
+		dmodels.StatsNumberMultiDelegators,
+		dmodels.StatsTransfersVolume,
+		dmodels.StatsFeeVolume,
+		dmodels.StatsHighestFee,
+		dmodels.StatsUndelegationVolume,
+		dmodels.StatsBlockDelay,
+		dmodels.StatsNetworkSize,
+		dmodels.StatsTotalAccounts,
+		dmodels.StatsTotalWhaleAccounts,
+		dmodels.StatsTotalSmallAccounts,
+		dmodels.StatsTotalJailers,
 	}
 	return s.getStates(filter)
 }
@@ -73,7 +60,7 @@ func (s *ServiceFacade) MakeStats() {
 		fetch func() (decimal.Decimal, error)
 	}{
 		{
-			title: StatsTotalStakingBalance,
+			title: dmodels.StatsTotalStakingBalance,
 			fetch: func() (value decimal.Decimal, err error) {
 				stakingPool, err := s.node.GetStakingPool()
 				if err != nil {
@@ -83,7 +70,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsNumberDelegators,
+			title: dmodels.StatsNumberDelegators,
 			fetch: func() (value decimal.Decimal, err error) {
 				total, err := s.dao.GetDelegatorsTotal(filters.TimeRange{
 					From: dmodels.NewTime(startOfYesterday),
@@ -96,7 +83,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsNumberMultiDelegators,
+			title: dmodels.StatsNumberMultiDelegators,
 			fetch: func() (value decimal.Decimal, err error) {
 				total, err := s.dao.GetMultiDelegatorsTotal(filters.TimeRange{})
 				if err != nil {
@@ -106,7 +93,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsTransfersVolume,
+			title: dmodels.StatsTransfersVolume,
 			fetch: func() (value decimal.Decimal, err error) {
 				volume, err := s.dao.GetTransferVolume(filters.TimeRange{})
 				if err != nil {
@@ -116,7 +103,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsFeeVolume,
+			title: dmodels.StatsFeeVolume,
 			fetch: func() (value decimal.Decimal, err error) {
 				volume, err := s.dao.GetTransactionsFeeVolume(filters.TimeRange{
 					From: dmodels.NewTime(startOfYesterday),
@@ -129,7 +116,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsHighestFee,
+			title: dmodels.StatsHighestFee,
 			fetch: func() (value decimal.Decimal, err error) {
 				volume, err := s.dao.GetTransactionsHighestFee(filters.TimeRange{
 					From: dmodels.NewTime(startOfYesterday),
@@ -142,7 +129,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsUndelegationVolume,
+			title: dmodels.StatsUndelegationVolume,
 			fetch: func() (value decimal.Decimal, err error) {
 				volume, err := s.dao.GetUndelegationsVolume(filters.TimeRange{
 					From: dmodels.NewTime(startOfYesterday),
@@ -155,7 +142,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsBlockDelay,
+			title: dmodels.StatsBlockDelay,
 			fetch: func() (value decimal.Decimal, err error) {
 				delay, err := s.dao.GetAvgBlocksDelay(filters.TimeRange{
 					From: dmodels.NewTime(startOfYesterday),
@@ -171,7 +158,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsNetworkSize,
+			title: dmodels.StatsNetworkSize,
 			fetch: func() (value decimal.Decimal, err error) {
 				size, err := s.GetSizeOfNode()
 				if err != nil {
@@ -181,7 +168,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsTotalAccounts,
+			title: dmodels.StatsTotalAccounts,
 			fetch: func() (value decimal.Decimal, err error) {
 				total, err := s.dao.GetAccountsTotal(filters.Accounts{})
 				if err != nil {
@@ -191,7 +178,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsTotalWhaleAccounts,
+			title: dmodels.StatsTotalWhaleAccounts,
 			fetch: func() (value decimal.Decimal, err error) {
 				minAmount := decimal.NewFromFloat(300000)
 				total, err := s.dao.GetAccountsTotal(filters.Accounts{GtTotalAmount: minAmount})
@@ -202,7 +189,7 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsTotalSmallAccounts,
+			title: dmodels.StatsTotalSmallAccounts,
 			fetch: func() (value decimal.Decimal, err error) {
 				maxAmount := decimal.NewFromFloat(1)
 				total, err := s.dao.GetAccountsTotal(filters.Accounts{LtTotalAmount: maxAmount})
@@ -213,13 +200,48 @@ func (s *ServiceFacade) MakeStats() {
 			},
 		},
 		{
-			title: StatsTotalJailers,
+			title: dmodels.StatsTotalJailers,
 			fetch: func() (value decimal.Decimal, err error) {
 				total, err := s.dao.GetJailersTotal()
 				if err != nil {
 					return value, fmt.Errorf("dao.GetJailersTotal: %s", err.Error())
 				}
 				return decimal.NewFromInt(int64(total)), nil
+			},
+		},
+		{
+			title: dmodels.StatsValidatorsWith33Power,
+			fetch: func() (value decimal.Decimal, err error) {
+				sp, err := s.node.GetStakingPool()
+				if err != nil {
+					return value, fmt.Errorf("node.GetStakingPool: %s", err.Error())
+				}
+				mp, err := s.GetValidatorMap()
+				if err != nil {
+					return value, fmt.Errorf("s.GetValidatorMap: %s", err.Error())
+				}
+				var amounts []decimal.Decimal
+				for _, validator := range mp {
+					amounts = append(amounts, validator.DelegatorShares.Div(node.PrecisionDiv))
+				}
+				sort.Slice(amounts, func(i, j int) bool {
+					return amounts[i].GreaterThan(amounts[j])
+				})
+				if sp.Result.BondedTokens.IsZero() {
+					return value, fmt.Errorf("total stake is zero")
+				}
+				stake := sp.Result.BondedTokens
+				sum := decimal.Zero
+				limit := decimal.NewFromFloat(33.4)
+				for _, amount := range amounts {
+					sum = sum.Add(amount)
+					value = value.Add(decimal.NewFromInt(1))
+					power := sum.Div(stake).Mul(decimal.NewFromInt(100))
+					if power.GreaterThan(limit) {
+						return value, nil
+					}
+				}
+				return value, nil
 			},
 		},
 	}
@@ -245,3 +267,12 @@ func (s *ServiceFacade) MakeStats() {
 		log.Error("MakeStats: dao.CreateStats: %s", err.Error())
 	}
 }
+
+func (s *ServiceFacade) GetAggValidators33Power(filter filters.Agg) (items []smodels.AggItem, err error) {
+	items, err = s.dao.GetAggValidators33Power(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetAggValidators33Power: %s", err.Error())
+	}
+	return items, nil
+}
+
