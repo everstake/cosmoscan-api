@@ -122,6 +122,15 @@ type (
 			Proposer   string `json:"proposer"`
 		} `json:"result"`
 	}
+	DelegatorValidatorStakeResult struct {
+		Height uint64 `json:"height,string"`
+		Result struct {
+			DelegatorAddress string          `json:"delegator_address"`
+			ValidatorAddress string          `json:"validator_address"`
+			Shares           decimal.Decimal `json:"shares"`
+			Balance          decimal.Decimal `json:"balance"`
+		} `json:"result"`
+	}
 )
 
 func NewAPI(cfg config.Config) *API {
@@ -257,6 +266,15 @@ func (api API) GetProposalProposer(id uint64) (address string, err error) {
 		return address, fmt.Errorf("request: %s", err.Error())
 	}
 	return result.Result.Proposer, nil
+}
+
+func (api API) GetDelegatorValidatorStake(delegator string, validator string) (amount decimal.Decimal, err error) {
+	var result DelegatorValidatorStakeResult
+	err = api.request(fmt.Sprintf("/staking/delegators/%s/delegations/%s", delegator, validator), &result)
+	if err != nil {
+		return amount, fmt.Errorf("request: %s", err.Error())
+	}
+	return result.Result.Shares.Div(PrecisionDiv), nil
 }
 
 func (r *AmountResult) Amount() decimal.Decimal {

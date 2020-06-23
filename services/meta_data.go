@@ -28,7 +28,7 @@ func (s *ServiceFacade) GetMetaData() (meta smodels.MetaData, err error) {
 	}
 	proposer := blocks[0].Proposer
 
-	data, found := s.dao.CacheGet(validatorsCacheKey)
+	data, found := s.dao.CacheGet(validatorsMapCacheKey)
 	if found {
 		validators := data.(map[string]node.Validator)
 		avgFee := decimal.Zero

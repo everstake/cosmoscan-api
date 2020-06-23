@@ -72,9 +72,11 @@ func (s *ServiceFacade) MakeStats() {
 		{
 			title: dmodels.StatsNumberDelegators,
 			fetch: func() (value decimal.Decimal, err error) {
-				total, err := s.dao.GetDelegatorsTotal(filters.TimeRange{
-					From: dmodels.NewTime(startOfYesterday),
-					To:   dmodels.NewTime(startOfToday),
+				total, err := s.dao.GetDelegatorsTotal(filters.Delegators{
+					TimeRange: filters.TimeRange{
+						From: dmodels.NewTime(startOfYesterday),
+						To:   dmodels.NewTime(startOfToday),
+					},
 				})
 				if err != nil {
 					return value, fmt.Errorf("dao.GetDelegatorsTotal: %s", err.Error())
@@ -275,4 +277,3 @@ func (s *ServiceFacade) GetAggValidators33Power(filter filters.Agg) (items []smo
 	}
 	return items, nil
 }
-

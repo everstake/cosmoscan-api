@@ -37,6 +37,8 @@ type (
 		GetProposalDeposits(filter filters.ProposalDeposits) (deposits []dmodels.ProposalDeposit, err error)
 		GetProposalsChartData() (items []smodels.ProposalChartData, err error)
 		GetAggValidators33Power(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetValidators() (validators []smodels.Validator, err error)
+		UpdateValidators()
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)
@@ -52,6 +54,8 @@ type (
 		GetUnbonding(address string) (amount decimal.Decimal, err error)
 		GetProposals() (proposals node.ProposalsResult, err error)
 		GetProposalProposer(id uint64) (proposer string, err error)
+		GetDelegatorValidatorStake(delegator string, validator string) (amount decimal.Decimal, err error)
+
 	}
 
 	ServiceFacade struct {

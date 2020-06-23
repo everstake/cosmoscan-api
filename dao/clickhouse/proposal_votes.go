@@ -39,6 +39,9 @@ func (db DB) GetProposalVotes(filter filters.ProposalVotes) (votes []dmodels.Pro
 	if len(filter.ProposalID) != 0 {
 		q = q.Where(squirrel.Eq{"prv_proposal_id": filter.ProposalID})
 	}
+	if len(filter.Voters) != 0 {
+		q = q.Where(squirrel.Eq{"prv_voter": filter.Voters})
+	}
 	if filter.Limit != 0 {
 		q = q.Limit(filter.Limit)
 	}
@@ -53,6 +56,9 @@ func (db DB) GetProposalVotesTotal(filter filters.ProposalVotes) (total uint64, 
 	q := squirrel.Select("count(*) as total").From(dmodels.ProposalVotesTable)
 	if len(filter.ProposalID) != 0 {
 		q = q.Where(squirrel.Eq{"prv_proposal_id": filter.ProposalID})
+	}
+	if len(filter.Voters) != 0 {
+		q = q.Where(squirrel.Eq{"prv_voter": filter.Voters})
 	}
 	err = db.FindFirst(&total, q)
 	return total, err

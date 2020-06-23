@@ -49,10 +49,13 @@ func (db DB) GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggI
 	return items, err
 }
 
-func (db DB) GetDelegatorsTotal(filter filters.TimeRange) (total uint64, err error) {
+func (db DB) GetDelegatorsTotal(filter filters.Delegators) (total uint64, err error) {
 	q1 := squirrel.Select("dlg_delegator as delegator", "sum(dlg_amount) as amount").
 		From(dmodels.DelegationsTable).GroupBy("dlg_delegator").
 		Having(squirrel.Gt{"amount": 0})
+	if len(filter.Validators) != 0 {
+		q1 = q1.Where(squirrel.Eq{"dlg_validator": filter.Validators})
+	}
 	q1 = filter.Query("dlg_created_at", q1)
 	q := squirrel.Select("count(t.*) as total").FromSelect(q1, "t")
 	err = db.FindFirst(&total, q)
@@ -76,4 +79,17 @@ func (db DB) GetUndelegationsVolume(filter filters.TimeRange) (total decimal.Dec
 	q = filter.Query("dlg_created_at", q)
 	err = db.FindFirst(&total, q)
 	return total, err
+}
+
+func (db DB) GetVotingPower(filter filters.VotingPower) (volume decimal.Decimal, err error) {
+	q := squirrel.Select("sum(dlg_amount) as volume").From(dmodels.DelegationsTable)
+	q = filter.Query("dlg_created_at", q)
+	if len(filter.Delegators) != 0 {
+		q = q.Where(squirrel.Eq{"dlg_delegator": filter.Delegators})
+	}
+	if len(filter.Validators) != 0 {
+		q = q.Where(squirrel.Eq{"dlg_validator": filter.Validators})
+	}
+	err = db.FindFirst(&volume, q)
+	return volume, err
 }

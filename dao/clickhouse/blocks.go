@@ -90,3 +90,12 @@ func (db DB) GetAvgBlocksDelay(filter filters.TimeRange) (delay float64, err err
 	err = db.FindFirst(&delay, q)
 	return delay, err
 }
+
+func (db DB) GetProposedBlocksTotal(filter filters.BlocksProposed) (total uint64, err error) {
+	q := squirrel.Select("count(*) as total").From(dmodels.BlocksTable)
+	if len(filter.Proposers) != 0 {
+		q = q.Where(squirrel.Eq{"blk_proposer": filter.Proposers})
+	}
+	err = db.FindFirst(&total, q)
+	return total, err
+}

@@ -52,7 +52,7 @@ type (
 		CreateDelegations(delegations []dmodels.Delegation) error
 		GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetUndelegationsVolume(filter filters.TimeRange) (total decimal.Decimal, err error)
-		GetDelegatorsTotal(filter filters.TimeRange) (total uint64, err error)
+		GetDelegatorsTotal(filter filters.Delegators) (total uint64, err error)
 		GetMultiDelegatorsTotal(filter filters.TimeRange) (total uint64, err error)
 		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		CreateDelegatorRewards(rewards []dmodels.DelegatorReward) error
@@ -76,6 +76,8 @@ type (
 		CreateHistoryProposals(proposals []dmodels.HistoryProposal) error
 		GetHistoryProposals(filter filters.HistoryProposals) (proposals []dmodels.HistoryProposal, err error)
 		GetAggValidators33Power(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetProposedBlocksTotal(filter filters.BlocksProposed) (total uint64, err error)
+		GetVotingPower(filter filters.VotingPower) (volume decimal.Decimal, err error)
 	}
 
 	Cache interface {
