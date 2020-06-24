@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/everstake/cosmoscan-api/api"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
