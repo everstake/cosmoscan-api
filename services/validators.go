@@ -82,7 +82,7 @@ func (s *ServiceFacade) GetStakingPie() (pie smodels.Pie, err error) {
 }
 
 func (s *ServiceFacade) GetValidators() (validators []smodels.Validator, err error) {
-	data, found := s.dao.CacheGet(validatorsMapCacheKey)
+	data, found := s.dao.CacheGet(validatorsCacheKey)
 	if found {
 		return data.([]smodels.Validator), nil
 	}
