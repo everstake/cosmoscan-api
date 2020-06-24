@@ -616,6 +616,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/agg_item'
+  /validators:
+    get:
+      tags:
+        - Services
+      summary: Get validators info
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    self_stake:
+                      type: number
+                    fee:
+                      type: number
+                    blocks_proposed:
+                      type: number
+                    delegators:
+                      type: number
+                    power_24_change:
+                      type: number
+                    governance_votes:
+                      type: number
 components:
   schemas:
     agg_item:
