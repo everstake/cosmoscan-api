@@ -104,6 +104,7 @@ func (api *API) loadRoutes() {
 		{Path: "/blocks/count/agg", Method: http.MethodGet, Func: api.GetAggBlocksCount},
 		{Path: "/blocks/delay/agg", Method: http.MethodGet, Func: api.GetAggBlocksDelay},
 		{Path: "/blocks/validators/uniq/agg", Method: http.MethodGet, Func: api.GetAggUniqBlockValidators},
+		{Path: "/blocks/operations/agg", Method: http.MethodGet, Func: api.GetAvgOperationsPerBlock},
 		{Path: "/delegations/volume/agg", Method: http.MethodGet, Func: api.GetAggDelegationsVolume},
 		{Path: "/undelegations/volume/agg", Method: http.MethodGet, Func: api.GetAggUndelegationsVolume},
 		{Path: "/network/stats", Method: http.MethodGet, Func: api.GetNetworkStats},
@@ -113,6 +114,7 @@ func (api *API) loadRoutes() {
 		{Path: "/proposals/deposits", Method: http.MethodGet, Func: api.GetProposalDeposits},
 		{Path: "/proposals/chart", Method: http.MethodGet, Func: api.GetProposalChartData},
 		{Path: "/validators/33power/agg", Method: http.MethodGet, Func: api.GetAggValidators33Power},
+		{Path: "/accounts/whale/agg", Method: http.MethodGet, Func: api.GetAggWhaleAccounts},
 	})
 
 }

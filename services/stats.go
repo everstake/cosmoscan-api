@@ -277,3 +277,11 @@ func (s *ServiceFacade) GetAggValidators33Power(filter filters.Agg) (items []smo
 	}
 	return items, nil
 }
+
+func (s *ServiceFacade) GetAggWhaleAccounts(filter filters.Agg) (items []smodels.AggItem, err error) {
+	items, err = s.dao.GetAggWhaleAccounts(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetAggWhaleAccounts: %s", err.Error())
+	}
+	return items, nil
+}

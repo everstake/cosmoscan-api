@@ -49,3 +49,10 @@ func (db DB) GetAggValidators33Power(filter filters.Agg) (items []smodels.AggIte
 	err = db.Find(&items, q)
 	return items, err
 }
+
+func (db DB) GetAggWhaleAccounts(filter filters.Agg) (items []smodels.AggItem, err error) {
+	q := filter.BuildQuery("max(stt_value)", "stt_created_at", dmodels.StatsTable).
+		Where(squirrel.Eq{"stt_title": dmodels.StatsTotalWhaleAccounts})
+	err = db.Find(&items, q)
+	return items, err
+}

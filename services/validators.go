@@ -150,6 +150,7 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 
 		validators = append(validators, smodels.Validator{
 			Title:           v.Description.Moniker,
+			Power:           v.DelegatorShares.Div(node.PrecisionDiv),
 			SelfStake:       selfStake,
 			Fee:             v.Commission.CommissionRates.Rate,
 			BlocksProposed:  blockProposed,

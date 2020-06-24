@@ -76,8 +76,10 @@ type (
 		CreateHistoryProposals(proposals []dmodels.HistoryProposal) error
 		GetHistoryProposals(filter filters.HistoryProposals) (proposals []dmodels.HistoryProposal, err error)
 		GetAggValidators33Power(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggWhaleAccounts(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetProposedBlocksTotal(filter filters.BlocksProposed) (total uint64, err error)
 		GetVotingPower(filter filters.VotingPower) (volume decimal.Decimal, err error)
+		GetAvgOperationsPerBlock(filter filters.Agg) (items []smodels.AggItem, err error)
 	}
 
 	Cache interface {

@@ -39,6 +39,8 @@ type (
 		GetAggValidators33Power(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetValidators() (validators []smodels.Validator, err error)
 		UpdateValidators()
+		GetAvgOperationsPerBlock(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggWhaleAccounts(filter filters.Agg) (items []smodels.AggItem, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

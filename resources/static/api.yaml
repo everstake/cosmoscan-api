@@ -264,6 +264,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/agg_item'
+  /blocks/operations/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get avg number of operations per block by period
   /delegations/volume/agg:
     get:
       tags:
@@ -287,7 +311,6 @@ paths:
           schema:
             type: number
           description: timestamp in seconds
-      summary: Get aggregeted delegations volume
       responses:
         200:
           description: "Success"
@@ -616,6 +639,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/agg_item'
+  /accounts/whale/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregetd whale accounts
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
   /validators:
     get:
       tags:
@@ -633,6 +687,8 @@ paths:
                   properties:
                     title:
                       type: string
+                    power:
+                      type: number
                     self_stake:
                       type: number
                     fee:

@@ -21,3 +21,11 @@ func (s *ServiceFacade) GetAggOperationsCount(filter filters.Agg) (items []smode
 	}
 	return items, nil
 }
+
+func (s *ServiceFacade) GetAvgOperationsPerBlock(filter filters.Agg) (items []smodels.AggItem, err error) {
+	items, err = s.dao.GetAvgOperationsPerBlock(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetAvgOperationsPerBlock: %s", err.Error())
+	}
+	return items, nil
+}

@@ -4,6 +4,7 @@ import "github.com/shopspring/decimal"
 
 type Validator struct {
 	Title           string          `json:"title"`
+	Power           decimal.Decimal `json:"power"`
 	SelfStake       decimal.Decimal `json:"self_stake"`
 	Fee             decimal.Decimal `json:"fee"`
 	BlocksProposed  uint64          `json:"blocks_proposed"`

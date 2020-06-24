@@ -72,3 +72,20 @@ func (db DB) GetTransactionsHighestFee(filter filters.TimeRange) (total decimal.
 	err = db.FindFirst(&total, q)
 	return total, err
 }
+
+func (db DB) GetAvgOperationsPerBlock(filter filters.Agg) (items []smodels.AggItem, err error) {
+	// approximate number of blocks by `period`
+	blocks := 12000
+	switch filter.By {
+	case filters.AggByHour:
+		blocks = 500
+	case filters.AggByWeek:
+		blocks = 84000
+	case filters.AggByMonth:
+		blocks = 360000
+	}
+	aggValue := fmt.Sprintf("toDecimal64(sum(trn_messages) / %d, 4)", blocks)
+	q := filter.BuildQuery(aggValue, "trn_created_at", dmodels.TransactionsTable)
+	err = db.Find(&items, q)
+	return items, err
+}
