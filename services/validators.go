@@ -214,11 +214,7 @@ func (s *ServiceFacade) GetMostJailedValidators() (items []dmodels.ValidatorValu
 	}
 	mp := make(map[string]string)
 	for _, validator := range validators {
-		key, err := types.GetPubKeyFromBech32(types.Bech32PubKeyTypeConsPub, validator.ConsensusPubkey)
-		if err != nil {
-			return nil, fmt.Errorf("types.GetPubKeyFromBech32: %s", err.Error())
-		}
-		mp[key.Address().String()] = validator.Description.Moniker
+		mp[validator.OperatorAddress] = validator.Description.Moniker
 	}
 	for i, item := range items {
 		title, found := mp[item.Validator]
@@ -251,10 +247,12 @@ func (s *ServiceFacade) GetFeeRanges() (items []smodels.FeeRange, err error) {
 			max = validator.Commission.CommissionRates.Rate
 		}
 	}
+	step := max.Sub(min).Div(decimal.NewFromInt(point))
 	for i := int64(1); i <= point; i++ {
 		var validators []smodels.FeeRangeValidator
-		from := min.Mul(decimal.NewFromInt(i))
-		to := min.Mul(decimal.NewFromInt(i + 1))
+		from := step.Mul(decimal.NewFromInt(i))
+		to := step.Mul(decimal.NewFromInt(i + 1))
+
 		for _, validator := range validatorsMap {
 			rate := validator.Commission.CommissionRates.Rate
 			if rate.GreaterThan(from) && rate.LessThanOrEqual(to) {

@@ -33,7 +33,7 @@ func (db DB) GetJailersTotal() (total uint64, err error) {
 }
 
 func (db DB) GetMostJailedValidators() (items []dmodels.ValidatorValue, err error) {
-	q := squirrel.Select("count(*) as value", "jlr_address as validator").
+	q := squirrel.Select("count() as value", "jlr_address as validator").
 		From(dmodels.JailersTable).
 		GroupBy("validator").
 		OrderBy("value desc")
