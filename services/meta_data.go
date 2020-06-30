@@ -26,7 +26,10 @@ func (s *ServiceFacade) GetMetaData() (meta smodels.MetaData, err error) {
 		meta.BlockTime = blocks[0].CreatedAt.Sub(blocks[1].CreatedAt).Seconds()
 		meta.Height = blocks[0].ID
 	}
-	proposer := blocks[0].Proposer
+	var proposer string
+	if len(blocks) > 0 {
+		proposer = blocks[0].Proposer
+	}
 
 	data, found := s.dao.CacheGet(validatorsMapCacheKey)
 	if found {
