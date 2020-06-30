@@ -37,3 +37,14 @@ func (api *API) GetFeeRanges(w http.ResponseWriter, r *http.Request) {
 	jsonData(w, resp)
 
 }
+
+func (api *API) GetValidators(w http.ResponseWriter, r *http.Request) {
+	resp, err := api.svc.GetValidators()
+	if err != nil {
+		log.Error("API GetValidators: svc.GetValidators: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
+
+}

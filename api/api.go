@@ -113,6 +113,7 @@ func (api *API) loadRoutes() {
 		{Path: "/proposals/votes", Method: http.MethodGet, Func: api.GetProposalVotes},
 		{Path: "/proposals/deposits", Method: http.MethodGet, Func: api.GetProposalDeposits},
 		{Path: "/proposals/chart", Method: http.MethodGet, Func: api.GetProposalChartData},
+		{Path: "/validators", Method: http.MethodGet, Func: api.GetValidators},
 		{Path: "/validators/33power/agg", Method: http.MethodGet, Func: api.GetAggValidators33Power},
 		{Path: "/validators/top/proposed", Method: http.MethodGet, Func: api.GetTopProposedBlocksValidators},
 		{Path: "/validators/top/jailed", Method: http.MethodGet, Func: api.GetMostJailedValidators},
