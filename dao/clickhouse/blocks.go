@@ -99,3 +99,12 @@ func (db DB) GetProposedBlocksTotal(filter filters.BlocksProposed) (total uint64
 	err = db.FindFirst(&total, q)
 	return total, err
 }
+
+func (db DB) GetTopProposedBlocksValidators() (items []dmodels.ValidatorValue, err error) {
+	q := squirrel.Select("count(*) as value", "blk_proposer as validator").
+		From(dmodels.BlocksTable).
+		GroupBy("validator").
+		OrderBy("value desc")
+	err = db.Find(&items, q)
+	return items, err
+}

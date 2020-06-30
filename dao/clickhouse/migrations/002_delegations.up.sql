@@ -1,6 +1,6 @@
 create table delegations
 (
-    dlg_id         FixedString(42),
+    dlg_id         FixedString(40),
     dlg_tx_hash    FixedString(64),
     dlg_delegator  FixedString(45),
     dlg_validator  FixedString(52),

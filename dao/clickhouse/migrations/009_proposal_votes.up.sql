@@ -1,6 +1,6 @@
 create table proposal_votes
 (
-    prv_id          FixedString(42),
+    prv_id          FixedString(40),
     prv_proposal_id UInt64,
     prv_tx_hash     FixedString(64),
     prv_voter       String,

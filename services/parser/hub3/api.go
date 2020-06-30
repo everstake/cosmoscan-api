@@ -31,7 +31,8 @@ type (
 	}
 
 	Block struct {
-		BlockMeta struct {
+		ValidatorsSets Validatorsets `json:"-"` // internal field
+		BlockMeta      struct {
 			Header struct {
 				ChainID     string    `json:"chain_id"`
 				Height      uint64    `json:"height,string"`
@@ -60,12 +61,14 @@ type (
 		} `json:"block_meta"`
 		Block struct {
 			Header struct {
-				ChainID    string    `json:"chain_id"`
-				Height     uint64    `json:"height,string"`
-				Time       time.Time `json:"time"`
-				NumTxs     int       `json:"num_txs,string"`
-				Txs        []string  `json:"txs"`
-				Evidence   []string  `json:"evidence"`
+				ChainID  string    `json:"chain_id"`
+				Height   uint64    `json:"height,string"`
+				Time     time.Time `json:"time"`
+				NumTxs   int       `json:"num_txs,string"`
+				Txs      []string  `json:"txs"`
+				Evidence []string  `json:"evidence"`
+			} `json:"header"`
+			LastCommit struct {
 				Precommits []struct {
 					ValidatorAddress string    `json:"validator_address"`
 					ValidatorIndex   int       `json:"validator_index,string"`
@@ -74,7 +77,7 @@ type (
 					Timestamp        time.Time `json:"timestamp"`
 					Type             int       `json:"type"`
 				} `json:"precommits"`
-			} `json:"header"`
+			} `json:"last_commit"`
 		} `json:"block"`
 	}
 	TxsBatch struct {
@@ -109,9 +112,9 @@ type (
 				Memo string `json:"memo"`
 			} `json:"value"`
 		} `json:"tx"`
-		Events [] struct {
+		Events []struct {
 			Type       string `json:"type"`
-			Attributes [] struct {
+			Attributes []struct {
 				Key   string `json:"key"`
 				Value string `json:"value"`
 			} `json:"attributes"`
@@ -197,6 +200,15 @@ type (
 		MinHeight uint64
 		MaxHeight uint64
 	}
+
+	Validatorsets struct {
+		Result struct {
+			Validators []struct {
+				Address     string          `json:"address"`
+				VotingPower decimal.Decimal `json:"voting_power"`
+			} `json:"validators"`
+		} `json:"result"`
+	}
 )
 
 func NewAPI(address string) *API {
@@ -264,4 +276,9 @@ func (api *API) get(endpoint string, params map[string]string, result interface{
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
 	return nil
+}
+
+func (api *API) GetValidatorset(height uint64) (set Validatorsets, err error) {
+	err = api.get(fmt.Sprintf("validatorsets/%d", height), nil, &set)
+	return set, err
 }

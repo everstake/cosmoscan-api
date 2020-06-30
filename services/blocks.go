@@ -6,6 +6,8 @@ import (
 	"github.com/everstake/cosmoscan-api/smodels"
 )
 
+const topProposedBlocksValidatorsKey = "topProposedBlocksValidatorsKey"
+
 func (s *ServiceFacade) GetAggBlocksCount(filter filters.Agg) (items []smodels.AggItem, err error) {
 	items, err = s.dao.GetAggBlocksCount(filter)
 	if err != nil {

@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/cosmos/cosmos-sdk v0.38.4
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/gobuffalo/packr/v2 v2.7.1
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/schema v1.1.0

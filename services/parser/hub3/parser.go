@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
 	"github.com/everstake/cosmoscan-api/dao/filters"
@@ -50,6 +51,7 @@ type (
 		GetLatestBlock() (block Block, err error)
 		GetBlock(height uint64) (block Block, err error)
 		GetTxs(filter TxsFilter) (txs TxsBatch, err error)
+		GetValidatorset(height uint64) (set Validatorsets, err error)
 	}
 	data struct {
 		blocks           []dmodels.Block
@@ -62,6 +64,7 @@ type (
 		proposalVotes    []dmodels.ProposalVote
 		proposalDeposits []dmodels.ProposalDeposit
 		jailers          []dmodels.Jailer
+		missedBlocks     []dmodels.MissedBlock
 	}
 	task struct {
 		name   string
@@ -168,15 +171,22 @@ func (p *Parser) runFetchers() {
 				case task := <-p.fetcherCh:
 					switch task.name {
 					case taskNameBlock:
-						var err error
 						for {
-							task.value, err = p.api.GetBlock(task.height)
-							if err == nil {
-								p.workerCh <- task
-								break
+							block, err := p.api.GetBlock(task.height)
+							if err != nil {
+								log.Error("Parser: fetcher: api.GetBlock: %s", err.Error())
+								<-time.After(time.Second)
+								continue
 							}
-							log.Error("Parser: fetcher: api.GetBlock: %s", err.Error())
-							<-time.After(time.Second)
+							block.ValidatorsSets, err = p.api.GetValidatorset(task.height)
+							if err != nil {
+								log.Error("Parser: fetcher: api.GetBlock: %s", err.Error())
+								<-time.After(time.Second)
+								continue
+							}
+							task.value = block
+							p.workerCh <- task
+							break
 						}
 					case taskNameTxs:
 						var err error
@@ -221,6 +231,37 @@ func (p *Parser) runWorker() {
 					CreatedAt: block.BlockMeta.Header.Time,
 				})
 				totalTxs += block.BlockMeta.Header.NumTxs
+
+				// find missed blocks
+				if len(block.Block.LastCommit.Precommits) != 125 {
+					set := make(map[int]string)
+					for i, s := range block.ValidatorsSets.Result.Validators {
+						address, err := types.ConsAddressFromBech32(s.Address)
+						if err != nil {
+							log.Warn("Parser: types.ConsAddressFromBech32: %s", err.Error())
+							continue
+						}
+						set[i] = hex.EncodeToString(address.Bytes())
+					}
+
+					precommits := make(map[int]struct{})
+					for _, precommit := range block.Block.LastCommit.Precommits {
+						precommits[precommit.ValidatorIndex] = struct{}{}
+					}
+
+					for validatorIndex, address := range set {
+						_, ok := precommits[validatorIndex]
+						if !ok {
+							id := makeHash(fmt.Sprintf("%d.%d", block.Block.Header.Height, validatorIndex))
+							p.data.missedBlocks = append(p.data.missedBlocks, dmodels.MissedBlock{
+								ID:        id,
+								Height:    block.Block.Header.Height,
+								Validator: address,
+								CreatedAt: block.BlockMeta.Header.Time,
+							})
+						}
+					}
+				}
 
 				if block.BlockMeta.Header.NumTxs != 0 {
 					pages := int(math.Ceil(float64(block.BlockMeta.Header.NumTxs) / float64(batchTxs)))
@@ -484,7 +525,7 @@ func (p *Parser) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte)
 		return fmt.Errorf("not found validator %s in map", m.ValidatorAddress)
 	}
 
-	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
 	p.data.delegatorRewards = append(p.data.delegatorRewards, dmodels.DelegatorReward{
 		ID:        id,
 		TxHash:    tx.Hash,
@@ -717,6 +758,14 @@ func (p *Parser) runSaver(model dmodels.Parser) {
 				break
 			}
 			log.Error("Parser: dao.CreateJailers: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateMissedBlocks(data.missedBlocks)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateMissedBlocks: %s", err.Error())
 			<-time.After(repeatDelay)
 		}
 		p.saveNewAccounts(data)

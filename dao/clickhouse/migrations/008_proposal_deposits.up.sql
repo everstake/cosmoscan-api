@@ -1,6 +1,6 @@
 create table proposal_deposits
 (
-    prd_id          FixedString(42),
+    prd_id          FixedString(40),
     prd_proposal_id UInt64,
     prd_depositor   String,
     prd_amount      Decimal128(18),

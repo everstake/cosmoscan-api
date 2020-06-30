@@ -1,6 +1,6 @@
 create table validator_rewards
 (
-    var_id         FixedString(42),
+    var_id         FixedString(40),
     var_tx_hash    FixedString(64),
     var_address    FixedString(52),
     var_amount     Decimal128(18),

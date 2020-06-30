@@ -41,6 +41,9 @@ type (
 		UpdateValidators()
 		GetAvgOperationsPerBlock(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggWhaleAccounts(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetTopProposedBlocksValidators() (items []dmodels.ValidatorValue, err error)
+		GetMostJailedValidators() (items []dmodels.ValidatorValue, err error)
+		GetFeeRanges() (items []smodels.FeeRange, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

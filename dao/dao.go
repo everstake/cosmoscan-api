@@ -80,6 +80,9 @@ type (
 		GetProposedBlocksTotal(filter filters.BlocksProposed) (total uint64, err error)
 		GetVotingPower(filter filters.VotingPower) (volume decimal.Decimal, err error)
 		GetAvgOperationsPerBlock(filter filters.Agg) (items []smodels.AggItem, err error)
+		CreateMissedBlocks(blocks []dmodels.MissedBlock) error
+		GetTopProposedBlocksValidators() (items []dmodels.ValidatorValue, err error)
+		GetMostJailedValidators() (items []dmodels.ValidatorValue, err error)
 	}
 
 	Cache interface {

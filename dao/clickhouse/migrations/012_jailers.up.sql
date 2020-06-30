@@ -1,6 +1,6 @@
 create table jailers
 (
-    jlr_id         FixedString(42),
+    jlr_id         FixedString(40),
     jlr_address    String,
     jlr_created_at DateTime
 ) ENGINE ReplacingMergeTree()
