@@ -48,3 +48,14 @@ func (api *API) GetValidators(w http.ResponseWriter, r *http.Request) {
 	jsonData(w, resp)
 
 }
+
+func (api *API) GetValidatorsDelegatorsTotal(w http.ResponseWriter, r *http.Request) {
+	resp, err := api.svc.GetValidatorsDelegatorsTotal()
+	if err != nil {
+		log.Error("API GetValidatorsDelegatorsTotal: svc.GetValidatorsDelegatorsTotal: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
+
+}

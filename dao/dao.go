@@ -83,6 +83,7 @@ type (
 		CreateMissedBlocks(blocks []dmodels.MissedBlock) error
 		GetTopProposedBlocksValidators() (items []dmodels.ValidatorValue, err error)
 		GetMostJailedValidators() (items []dmodels.ValidatorValue, err error)
+		GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, err error)
 	}
 
 	Cache interface {

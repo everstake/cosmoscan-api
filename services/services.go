@@ -44,6 +44,7 @@ type (
 		GetTopProposedBlocksValidators() (items []dmodels.ValidatorValue, err error)
 		GetMostJailedValidators() (items []dmodels.ValidatorValue, err error)
 		GetFeeRanges() (items []smodels.FeeRange, err error)
+		GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

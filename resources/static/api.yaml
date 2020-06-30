@@ -288,6 +288,13 @@ paths:
             type: number
           description: timestamp in seconds
       summary: Get avg number of operations per block by period
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
   /delegations/volume/agg:
     get:
       tags:
@@ -701,6 +708,68 @@ paths:
                       type: number
                     governance_votes:
                       type: number
+  /validators/delegators/total:
+    get:
+      tags:
+        - Services
+      summary: Get validators delegators
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validator_item'
+  /validators/top/jailed:
+    get:
+      tags:
+        - Services
+      summary: Get most jailed validators
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validator_item'
+  /validators/top/proposed:
+    get:
+      tags:
+        - Services
+      summary: Get validators with max count of proposed blocks
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/validator_item'
+  /validators/fee/ranges:
+    get:
+      tags:
+        - Services
+      summary: Get validators fee range
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  from:
+                    type: number
+                  to:
+                    type: number
+                  validators:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        validator:
+                          type: string
+                        fee:
+                          type: number
 components:
   schemas:
     agg_item:
@@ -714,3 +783,14 @@ components:
             type: number
       example:
         [{time: 1591258057, value: "32.32"}, {time: 1591258052, value: "5"}]
+    validator_item:
+      type: array
+      items:
+        type: object
+        properties:
+          validator:
+            type: string
+          value:
+            type: number
+      example:
+        [{validator: "validator1", value: 2}, {validator: "validator2", value: 32}]

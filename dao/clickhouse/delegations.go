@@ -93,3 +93,14 @@ func (db DB) GetVotingPower(filter filters.VotingPower) (volume decimal.Decimal,
 	err = db.FindFirst(&volume, q)
 	return volume, err
 }
+
+func (db DB) GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, err error) {
+	q1 := squirrel.Select("sum(dlg_amount) as volume", "dlg_delegator", "dlg_validator").
+		From(dmodels.DelegationsTable).
+		GroupBy("dlg_delegator", "dlg_validator").
+		Having(squirrel.Gt{"volume": 0})
+	q := squirrel.Select("count(dlg_validator) as value, t.dlg_validator as validator").
+		FromSelect(q1, "t").GroupBy("dlg_validator").OrderBy("value desc")
+	err = db.Find(&values, q)
+	return values, err
+}

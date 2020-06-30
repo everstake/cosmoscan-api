@@ -272,3 +272,11 @@ func (s *ServiceFacade) GetFeeRanges() (items []smodels.FeeRange, err error) {
 	}
 	return items, nil
 }
+
+func (s *ServiceFacade) GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, err error) {
+	values, err = s.dao.GetValidatorsDelegatorsTotal()
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetValidatorsDelegatorsTotal: %s", err.Error())
+	}
+	return values, nil
+}
