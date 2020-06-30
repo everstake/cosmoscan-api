@@ -57,7 +57,7 @@ func (db DB) GetDelegatorsTotal(filter filters.Delegators) (total uint64, err er
 		q1 = q1.Where(squirrel.Eq{"dlg_validator": filter.Validators})
 	}
 	q1 = filter.Query("dlg_created_at", q1)
-	q := squirrel.Select("count(t.*) as total").FromSelect(q1, "t")
+	q := squirrel.Select("count() as total").FromSelect(q1, "t")
 	err = db.FindFirst(&total, q)
 	return total, err
 }
@@ -67,7 +67,7 @@ func (db DB) GetMultiDelegatorsTotal(filter filters.TimeRange) (total uint64, er
 		From(dmodels.DelegationsTable).GroupBy("dlg_delegator").
 		Having(squirrel.Gt{"amount": 0}).Having(squirrel.Gt{"validators_count": 1})
 	q1 = filter.Query("dlg_created_at", q1)
-	q := squirrel.Select("count(t.*) as total").FromSelect(q1, "t")
+	q := squirrel.Select("count() as total").FromSelect(q1, "t")
 	err = db.FindFirst(&total, q)
 	return total, err
 }
