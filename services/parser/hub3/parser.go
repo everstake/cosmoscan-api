@@ -2,6 +2,7 @@ package hub3
 
 import (
 	"context"
+	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,23 +14,23 @@ import (
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/shopspring/decimal"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 const repeatDelay = time.Second * 5
 const ParserTitle = "hub3"
 
-const taskNameBlock = "block"
-const taskNameTxs = "txs"
 const batchTxs = 50
 const precision = 6
 
 var precisionDiv = decimal.New(1, precision)
 
 type (
-	Parser2 struct {
+	Parser struct {
 		cfg       config.Config
 		api       api
 		dao       dao.DAO
@@ -38,6 +39,7 @@ type (
 		accounts  map[string]struct{}
 		ctx       context.Context
 		cancel    context.CancelFunc
+		wg        *sync.WaitGroup
 	}
 	api interface {
 		GetLatestBlock() (block Block, err error)
@@ -61,9 +63,9 @@ type (
 	}
 )
 
-func NewParser(cfg config.Config, d dao.DAO) *Parser2 {
+func NewParser(cfg config.Config, d dao.DAO) *Parser {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &Parser2{
+	return &Parser{
 		cfg:       cfg,
 		dao:       d,
 		api:       NewAPI(cfg.Parser.Node),
@@ -72,16 +74,24 @@ func NewParser(cfg config.Config, d dao.DAO) *Parser2 {
 		accounts:  make(map[string]struct{}),
 		ctx:       ctx,
 		cancel:    cancel,
+		wg:        &sync.WaitGroup{},
 	}
 }
 
-func (p *Parser2) Run() error {
+func (p *Parser) Run() error {
 	model, err := p.dao.GetParser(ParserTitle)
 	if err != nil {
 		return fmt.Errorf("parser not found")
 	}
 	for i := uint64(0); i < p.cfg.Parser.Fetchers; i++ {
 		go p.runFetcher()
+	}
+	if model.Height == 0 {
+		err = p.parseGenesisState()
+		if err != nil {
+			return fmt.Errorf("parseGenesisState: %s", err.Error())
+		}
+		p.setAccounts()
 	}
 	go p.saving()
 	for {
@@ -104,16 +114,17 @@ func (p *Parser2) Run() error {
 	}
 }
 
-func (p *Parser2) Title() string {
+func (p *Parser) Title() string {
 	return "Parser"
 }
 
-func (p *Parser2) Stop() error {
+func (p *Parser) Stop() error {
 	p.cancel()
+	p.wg.Wait()
 	return nil
 }
 
-func (p *Parser2) runFetcher() {
+func (p *Parser) runFetcher() {
 	for {
 		select {
 		case <-p.ctx.Done():
@@ -123,6 +134,7 @@ func (p *Parser2) runFetcher() {
 		height := <-p.fetcherCh
 		for {
 			var d data
+			d.height = height
 			block, err := p.api.GetBlock(height)
 			if err != nil {
 				log.Error("Parser: fetcher: api.GetBlock: %s", err.Error())
@@ -265,7 +277,7 @@ func (p *Parser2) runFetcher() {
 	}
 }
 
-func (p *Parser2) saving() {
+func (p *Parser) saving() {
 	var model dmodels.Parser
 	for {
 		var err error
@@ -279,151 +291,162 @@ func (p *Parser2) saving() {
 	}
 	p.setAccounts()
 
+	ticker := time.After(time.Second)
+
 	var dataset []data
+
 	for {
 		select {
 		case <-p.ctx.Done():
 			return
-		default:
+		case d := <-p.saverCh:
+			dataset = append(dataset, d)
+			continue
+		case <-ticker:
+			sort.Slice(dataset, func(i, j int) bool {
+				return dataset[i].height < dataset[j].height
+			})
+			ticker = time.After(time.Second * 2)
 		}
-		d := <-p.saverCh
-		pasted := false
-		for i := 0; i < len(dataset); i++ {
-			if d.height < dataset[i].height {
-				newSet := append(dataset[:i], d)
-				newSet = append(newSet, dataset[i:]...)
-				dataset = newSet
-				pasted = true
+
+
+		var count int
+		for i, item := range dataset {
+			if item.height == model.Height+uint64(i+1) {
+				count = i + 1
+			} else {
 				break
 			}
 		}
-		if !pasted {
-			dataset = append(dataset, d)
+
+		if count == 0 {
+			continue
 		}
 
-		batch := p.cfg.Parser.Batch
-		targetHeight := model.Height + batch
-
-		if len(dataset) >= int(batch) && dataset[batch-1].height == targetHeight {
-			var singleData data
-			for _, d := range dataset[batch:] {
-				singleData.blocks = append(singleData.blocks, d.blocks...)
-				singleData.proposals = append(singleData.proposals, d.proposals...)
-				singleData.delegations = append(singleData.delegations, d.delegations...)
-				singleData.jailers = append(singleData.jailers, d.jailers...)
-				singleData.transactions = append(singleData.transactions, d.transactions...)
-				singleData.delegatorRewards = append(singleData.delegatorRewards, d.delegatorRewards...)
-				singleData.validatorRewards = append(singleData.validatorRewards, d.validatorRewards...)
-				singleData.transfers = append(singleData.transfers, d.transfers...)
-				singleData.proposalVotes = append(singleData.proposalVotes, d.proposalVotes...)
-				singleData.proposalDeposits = append(singleData.proposalDeposits, d.proposalDeposits...)
-				singleData.missedBlocks = append(singleData.missedBlocks, d.missedBlocks...)
-			}
-			var err error
-			for {
-				err = p.dao.CreateBlocks(singleData.blocks)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateBlocks: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateTransactions(singleData.transactions)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateTransactions: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateTransfers(singleData.transfers)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateTransfers: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateDelegations(singleData.delegations)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateDelegations: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateDelegatorRewards(singleData.delegatorRewards)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateDelegatorRewards: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateValidatorRewards(singleData.validatorRewards)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateValidatorRewards: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateHistoryProposals(singleData.proposals)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateProposals: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateProposalDeposits(singleData.proposalDeposits)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateProposalDeposits: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateProposalVotes(singleData.proposalVotes)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateProposalVotes: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateJailers(singleData.jailers)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateJailers: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			for {
-				err = p.dao.CreateMissedBlocks(singleData.missedBlocks)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.CreateMissedBlocks: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			p.saveNewAccounts(singleData)
-			for {
-				model.Height += batch
-				err = p.dao.UpdateParser(model)
-				if err == nil {
-					break
-				}
-				log.Error("Parser: dao.UpdateParser: %s", err.Error())
-				<-time.After(repeatDelay)
-			}
-			dataset = dataset[batch:]
+		if count > int(p.cfg.Parser.Batch) {
+			count = int(p.cfg.Parser.Batch)
 		}
+
+		var singleData data
+		for _, item := range dataset[:count] {
+			singleData.blocks = append(singleData.blocks, item.blocks...)
+			singleData.proposals = append(singleData.proposals, item.proposals...)
+			singleData.delegations = append(singleData.delegations, item.delegations...)
+			singleData.jailers = append(singleData.jailers, item.jailers...)
+			singleData.transactions = append(singleData.transactions, item.transactions...)
+			singleData.delegatorRewards = append(singleData.delegatorRewards, item.delegatorRewards...)
+			singleData.validatorRewards = append(singleData.validatorRewards, item.validatorRewards...)
+			singleData.transfers = append(singleData.transfers, item.transfers...)
+			singleData.proposalVotes = append(singleData.proposalVotes, item.proposalVotes...)
+			singleData.proposalDeposits = append(singleData.proposalDeposits, item.proposalDeposits...)
+			singleData.missedBlocks = append(singleData.missedBlocks, item.missedBlocks...)
+		}
+		p.wg.Add(1)
+		var err error
+		for {
+			err = p.dao.CreateBlocks(singleData.blocks)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateBlocks: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateTransactions(singleData.transactions)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateTransactions: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateTransfers(singleData.transfers)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateTransfers: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateDelegations(singleData.delegations)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateDelegations: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateDelegatorRewards(singleData.delegatorRewards)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateDelegatorRewards: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateValidatorRewards(singleData.validatorRewards)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateValidatorRewards: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateHistoryProposals(singleData.proposals)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateProposals: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateProposalDeposits(singleData.proposalDeposits)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateProposalDeposits: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateProposalVotes(singleData.proposalVotes)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateProposalVotes: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateJailers(singleData.jailers)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateJailers: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateMissedBlocks(singleData.missedBlocks)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateMissedBlocks: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		p.saveNewAccounts(singleData)
+		for {
+			model.Height += uint64(count)
+			err = p.dao.UpdateParser(model)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.UpdateParser: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		dataset = append(dataset[count:])
+		p.wg.Done()
 	}
 }
 
-func (p *Parser2) setAccounts() {
+func (p *Parser) setAccounts() {
 	var accounts []dmodels.Account
 	var err error
 	for {
@@ -440,7 +463,7 @@ func (p *Parser2) setAccounts() {
 	}
 }
 
-func (p *Parser2) saveNewAccounts(data data) {
+func (p *Parser) saveNewAccounts(data data) {
 	var newAccounts []dmodels.Account
 	addAccount := func(acc string, tm time.Time) {
 		_, ok := p.accounts[acc]
@@ -789,4 +812,48 @@ func (d *data) parseUnjailMsg(index int, tx Tx, data []byte) (err error) {
 		CreatedAt: tx.Timestamp,
 	})
 	return nil
+}
+
+func calculateAmount(amountItems []Amount) (decimal.Decimal, error) {
+	volume := decimal.Zero
+	for _, item := range amountItems {
+		if item.Denom == "" && item.Amount.IsZero() { // example height=1245781
+			break
+		}
+		if item.Denom != "uatom" {
+			return volume, fmt.Errorf("unknown demon (currency): %s", item.Denom)
+		}
+		volume = volume.Add(item.Amount)
+	}
+	volume = volume.Div(precisionDiv)
+	return volume, nil
+}
+
+func (a Amount) getAmount() (decimal.Decimal, error) {
+	if a.Denom == "" && a.Amount.IsZero() {
+		return decimal.Zero, nil
+	}
+	if a.Denom != "uatom" {
+		return decimal.Zero, fmt.Errorf("unknown demon (currency): %s", a.Denom)
+	}
+	a.Amount = a.Amount.Div(precisionDiv)
+	return a.Amount, nil
+}
+
+func strToAmount(str string) (decimal.Decimal, error) {
+	if str == "" {
+		return decimal.Zero, nil
+	}
+	val := strings.TrimSuffix(str, "uatom")
+	amount, err := decimal.NewFromString(val)
+	if err != nil {
+		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())
+	}
+	amount = amount.Div(precisionDiv)
+	return amount, nil
+}
+
+func makeHash(str string) string {
+	hash := sha1.Sum([]byte(str))
+	return hex.EncodeToString(hash[:])
 }

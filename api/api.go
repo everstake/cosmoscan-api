@@ -120,6 +120,8 @@ func (api *API) loadRoutes() {
 		{Path: "/validators/fee/ranges", Method: http.MethodGet, Func: api.GetFeeRanges},
 		{Path: "/validators/delegators/total", Method: http.MethodGet, Func: api.GetValidatorsDelegatorsTotal},
 		{Path: "/accounts/whale/agg", Method: http.MethodGet, Func: api.GetAggWhaleAccounts},
+		{Path: "/validator/{address}", Method: http.MethodGet, Func: api.GetValidator},
+		{Path: "/validator/{address}/balance", Method: http.MethodGet, Func: api.GetValidatorBalance},
 	})
 
 }

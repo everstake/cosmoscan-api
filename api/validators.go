@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/everstake/cosmoscan-api/log"
+	"github.com/gorilla/mux"
 	"net/http"
 )
 
@@ -58,4 +59,34 @@ func (api *API) GetValidatorsDelegatorsTotal(w http.ResponseWriter, r *http.Requ
 	}
 	jsonData(w, resp)
 
+}
+
+func (api *API) GetValidator(w http.ResponseWriter, r *http.Request) {
+	address, ok := mux.Vars(r)["address"]
+	if !ok || address == "" {
+		jsonBadRequest(w, "invalid address")
+		return
+	}
+	resp, err := api.svc.GetValidator(address)
+	if err != nil {
+		log.Error("API GetValidatorsDelegatorsTotal: svc.GetValidatorsDelegatorsTotal: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
+}
+
+func (api *API) GetValidatorBalance(w http.ResponseWriter, r *http.Request) {
+	address, ok := mux.Vars(r)["address"]
+	if !ok || address == "" {
+		jsonBadRequest(w, "invalid address")
+		return
+	}
+	resp, err := api.svc.GetValidatorBalance(address)
+	if err != nil {
+		log.Error("API GetValidatorBalance: svc.GetValidatorBalance: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
 }

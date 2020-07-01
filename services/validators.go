@@ -105,6 +105,10 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 	if err != nil {
 		return nil, fmt.Errorf("node.GetValidators: %s", err.Error())
 	}
+	stakingPool, err := s.node.GetStakingPool()
+	if err != nil {
+		return nil, fmt.Errorf("node.GetStakingPool: %s", err.Error())
+	}
 	for _, v := range nodeValidators {
 		key, err := types.GetPubKeyFromBech32(types.Bech32PubKeyTypeConsPub, v.ConsensusPubkey)
 		if err != nil {
@@ -150,15 +154,26 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 			return nil, fmt.Errorf("node.GetDelegatorValidatorStake: %s", err.Error())
 		}
 
+		power := v.DelegatorShares.Div(node.PrecisionDiv)
+		percentPower := decimal.Zero
+		if !stakingPool.Result.BondedTokens.IsZero() {
+			percentPower = power.Div(stakingPool.Result.BondedTokens)
+		}
+
 		validators = append(validators, smodels.Validator{
 			Title:           v.Description.Moniker,
-			Power:           v.DelegatorShares.Div(node.PrecisionDiv),
+			Power:           power,
+			PercentPower:    percentPower,
 			SelfStake:       selfStake,
 			Fee:             v.Commission.CommissionRates.Rate,
 			BlocksProposed:  blockProposed,
 			Delegators:      delegatorsTotal,
 			Power24Change:   power24Change,
 			GovernanceVotes: totalVotes,
+			Website:         v.Description.Website,
+			OperatorAddress: v.OperatorAddress,
+			AccAddress:      address.String(),
+			ConsAddress:     key.Address().String(),
 		})
 	}
 
@@ -243,15 +258,15 @@ func (s *ServiceFacade) GetFeeRanges() (items []smodels.FeeRange, err error) {
 		if validator.Commission.CommissionRates.Rate.LessThan(min) {
 			min = validator.Commission.CommissionRates.Rate
 		}
-		if validator.Commission.CommissionRates.Rate.GreaterThan(min) {
+		if validator.Commission.CommissionRates.Rate.GreaterThan(max) {
 			max = validator.Commission.CommissionRates.Rate
 		}
 	}
 	step := max.Sub(min).Div(decimal.NewFromInt(point))
 	for i := int64(1); i <= point; i++ {
 		var validators []smodels.FeeRangeValidator
-		from := step.Mul(decimal.NewFromInt(i))
-		to := step.Mul(decimal.NewFromInt(i + 1))
+		from := step.Mul(decimal.NewFromInt(i)).Sub(step)
+		to := step.Mul(decimal.NewFromInt(i))
 
 		for _, validator := range validatorsMap {
 			rate := validator.Commission.CommissionRates.Rate
@@ -277,4 +292,43 @@ func (s *ServiceFacade) GetValidatorsDelegatorsTotal() (values []dmodels.Validat
 		return nil, fmt.Errorf("dao.GetValidatorsDelegatorsTotal: %s", err.Error())
 	}
 	return values, nil
+}
+
+func (s *ServiceFacade) GetValidator(address string) (validator smodels.Validator, err error) {
+	data, found := s.dao.CacheGet(validatorsMapCacheKey)
+	if !found {
+		return validator, fmt.Errorf("not found in cache")
+	}
+	validators, ok := data.([]smodels.Validator)
+	if !ok {
+		return validator, fmt.Errorf("can`t cast to current type")
+	}
+	for _, v := range validators {
+		if v.OperatorAddress == address {
+			return v, nil
+		}
+	}
+	return validator, fmt.Errorf("not found validator with address: %s", address)
+}
+
+func (s *ServiceFacade) GetValidatorBalance(valAddress string) (balance smodels.Balance, err error) {
+	validator, err := s.GetValidator(valAddress)
+	if err != nil {
+		return balance, fmt.Errorf("GetValidator: %s", err.Error())
+	}
+	balance.SelfDelegated = validator.SelfStake
+	balance.OtherDelegated = validator.Power.Sub(validator.SelfStake)
+	addressBytes, err := types.GetFromBech32(valAddress, types.Bech32PrefixValAddr)
+	if err != nil {
+		return balance, fmt.Errorf("types.GetFromBech32: %s", err.Error())
+	}
+	address, err := types.AccAddressFromHex(hex.EncodeToString(addressBytes))
+	if err != nil {
+		return balance, fmt.Errorf("types.AccAddressFromHex: %s", err.Error())
+	}
+	balance.Available, err = s.node.GetBalance(address.String())
+	if err != nil {
+		return balance, fmt.Errorf("node.GetBalance: %s", err.Error())
+	}
+	return balance, nil
 }

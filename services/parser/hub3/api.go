@@ -31,7 +31,7 @@ type (
 	}
 
 	Block struct {
-		ValidatorsSets Validatorsets `json:"-"` // internal field
+		//ValidatorsSets Validatorsets `json:"-"` // internal field // todo
 		BlockMeta      struct {
 			Header struct {
 				ChainID     string    `json:"chain_id"`
