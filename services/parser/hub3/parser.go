@@ -156,33 +156,32 @@ func (p *Parser) runFetcher() {
 			})
 
 			// find missed blocks
-			if len(block.Block.LastCommit.Precommits) != 125 {
-				set := make(map[int]string)
-				for i, s := range validatorsSets.Result.Validators {
-					address, err := types.ConsAddressFromBech32(s.Address)
-					if err != nil {
-						log.Warn("Parser: types.ConsAddressFromBech32: %s", err.Error())
-						continue
-					}
-					set[i] = hex.EncodeToString(address.Bytes())
+			set := make(map[int]string)
+			for i, s := range validatorsSets.Result.Validators {
+				address, err := types.ConsAddressFromBech32(s.Address)
+				if err != nil {
+					log.Warn("Parser: types.ConsAddressFromBech32: %s", err.Error())
+					continue
 				}
+				set[i] = hex.EncodeToString(address.Bytes())
+			}
 
-				precommits := make(map[int]struct{})
-				for _, precommit := range block.Block.LastCommit.Precommits {
-					precommits[precommit.ValidatorIndex] = struct{}{}
-				}
+			precommits := make(map[int]struct{})
+			for _, precommit := range block.Block.LastCommit.Precommits {
+				precommits[precommit.ValidatorIndex] = struct{}{}
+			}
 
-				for validatorIndex, address := range set {
-					_, ok := precommits[validatorIndex]
-					if !ok {
-						id := makeHash(fmt.Sprintf("%d.%d", block.Block.Header.Height, validatorIndex))
-						d.missedBlocks = append(d.missedBlocks, dmodels.MissedBlock{
-							ID:        id,
-							Height:    block.Block.Header.Height,
-							Validator: address,
-							CreatedAt: block.BlockMeta.Header.Time,
-						})
-					}
+			for validatorIndex, address := range set {
+				_, ok := precommits[validatorIndex]
+				if !ok {
+					id := makeHash(fmt.Sprintf("%d.%d", block.Block.Header.Height, validatorIndex))
+					d.missedBlocks = append(d.missedBlocks, dmodels.MissedBlock{
+						ID:         id,
+						Height:     block.Block.Header.Height,
+						Validator:  address,
+						IsProposer: address == block.BlockMeta.Header.ProposerAddress,
+						CreatedAt:  block.BlockMeta.Header.Time,
+					})
 				}
 			}
 
@@ -308,7 +307,6 @@ func (p *Parser) saving() {
 			})
 			ticker = time.After(time.Second * 2)
 		}
-
 
 		var count int
 		for i, item := range dataset {

@@ -157,7 +157,7 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 		power := v.DelegatorShares.Div(node.PrecisionDiv)
 		percentPower := decimal.Zero
 		if !stakingPool.Result.BondedTokens.IsZero() {
-			percentPower = power.Div(stakingPool.Result.BondedTokens)
+			percentPower = power.Div(stakingPool.Result.BondedTokens).Mul(decimal.NewFromInt(100)).Truncate(2)
 		}
 
 		validators = append(validators, smodels.Validator{
@@ -295,7 +295,7 @@ func (s *ServiceFacade) GetValidatorsDelegatorsTotal() (values []dmodels.Validat
 }
 
 func (s *ServiceFacade) GetValidator(address string) (validator smodels.Validator, err error) {
-	data, found := s.dao.CacheGet(validatorsMapCacheKey)
+	data, found := s.dao.CacheGet(validatorsCacheKey)
 	if !found {
 		return validator, fmt.Errorf("not found in cache")
 	}

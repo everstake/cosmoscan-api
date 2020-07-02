@@ -35,8 +35,11 @@ func (db DB) CreateDelegations(delegations []dmodels.Delegation) error {
 	return db.Insert(q)
 }
 
-func (db DB) GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error) {
+func (db DB) GetAggDelegationsVolume(filter filters.DelegationsAgg) (items []smodels.AggItem, err error) {
 	q := filter.BuildQuery("sum(dlg_amount)", "dlg_created_at", dmodels.DelegationsTable)
+	if len(filter.Validators) != 0 {
+		q = q.Where(squirrel.Eq{"dlg_validator": filter.Validators})
+	}
 	q = q.Where(squirrel.Gt{"dlg_amount": 0})
 	err = db.Find(&items, q)
 	return items, err
@@ -103,4 +106,31 @@ func (db DB) GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, er
 		FromSelect(q1, "t").GroupBy("dlg_validator").OrderBy("value desc")
 	err = db.Find(&values, q)
 	return values, err
+}
+
+func (db DB) GetValidatorsDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error) {
+	query := `SELECT  * FROM
+	(SELECT dlg_delegator as delegator, sum(dlg_amount) as amount, min(dlg_created_at) as since
+	FROM delegations
+	WHERE dlg_validator = ?
+	GROUP BY dlg_delegator
+	HAVING amount > 0 ORDER BY amount DESC) as t1
+	ANY LEFT JOIN (
+		SELECT sum(dlg_amount) as delta, dlg_delegator as delegator
+		FROM delegations
+		WHERE dlg_validator = ? and dlg_created_at > yesterday()
+		GROUP BY dlg_delegator
+	) as t2 USING (delegator)`
+	if filter.Limit != 0 {
+		query = fmt.Sprintf("%s LIMIT %d", query, filter.Limit)
+	}
+	if filter.Offset != 0 {
+		query = fmt.Sprintf("%s OFFSET %d", query, filter.Offset)
+	}
+	q, args, err := squirrel.Expr(query, filter.Validator, filter.Validator).ToSql()
+	if err != nil {
+		return nil, err
+	}
+	err = db.conn.Select(&items, q, args...)
+	return items, err
 }

@@ -24,7 +24,7 @@ type (
 		GetAggBlocksCount(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggBlocksDelay(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggUniqBlockValidators(filter filters.Agg) (items []smodels.AggItem, err error)
-		GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggDelegationsVolume(filter filters.DelegationsAgg) (items []smodels.AggItem, err error)
 		GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetNetworkStates(filter filters.Stats) (map[string][]decimal.Decimal, error)
 		GetStakingPie() (pie smodels.Pie, err error)
@@ -47,6 +47,8 @@ type (
 		GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, err error)
 		GetValidator(address string) (validator smodels.Validator, err error)
 		GetValidatorBalance(valAddress string) (balance smodels.Balance, err error)
+		GetValidatorDelegationsAgg(validatorAddress string) (items []smodels.AggItem, err error)
+		GetValidatorDelegatorsAgg(validatorAddress string) (items []smodels.AggItem, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

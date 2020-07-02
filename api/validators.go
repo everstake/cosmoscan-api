@@ -69,7 +69,7 @@ func (api *API) GetValidator(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := api.svc.GetValidator(address)
 	if err != nil {
-		log.Error("API GetValidatorsDelegatorsTotal: svc.GetValidatorsDelegatorsTotal: %s", err.Error())
+		log.Error("API GetValidator: svc.GetValidator: %s", err.Error())
 		jsonError(w)
 		return
 	}

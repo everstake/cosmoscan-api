@@ -31,3 +31,24 @@ func (s *ServiceFacade) GetAggUniqBlockValidators(filter filters.Agg) (items []s
 	}
 	return items, nil
 }
+
+func (s *ServiceFacade) GetValidatorBlockStat(validatorAddress string) (stat smodels.ValidatorBlocksStat, err error) {
+	validator, err := s.GetValidator(validatorAddress)
+	if err != nil {
+		return stat, fmt.Errorf("GetValidator: %s", err.Error())
+	}
+	stat.Proposed, err = s.dao.GetProposedBlocksTotal(filters.BlocksProposed{
+		Proposers: []string{validator.ConsAddress},
+	})
+	if err != nil {
+		return stat, fmt.Errorf("dao.GetProposedBlocksTotal: %s", err.Error())
+	}
+	stat.MissedValidations, err = s.dao.GetMissedBlocksCount(filters.MissedBlocks{
+		Validators: []string{validator.ConsAddress},
+	})
+	if err != nil {
+		return stat, fmt.Errorf("dao.GetMissedBlocksCount: %s", err.Error())
+	}
+	// todo revenue
+	return stat, nil
+}

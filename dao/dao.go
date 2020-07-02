@@ -50,7 +50,7 @@ type (
 		CreateTransfers(transfers []dmodels.Transfer) error
 		GetTransferVolume(filter filters.TimeRange) (total decimal.Decimal, err error)
 		CreateDelegations(delegations []dmodels.Delegation) error
-		GetAggDelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggDelegationsVolume(filter filters.DelegationsAgg) (items []smodels.AggItem, err error)
 		GetUndelegationsVolume(filter filters.TimeRange) (total decimal.Decimal, err error)
 		GetDelegatorsTotal(filter filters.Delegators) (total uint64, err error)
 		GetMultiDelegatorsTotal(filter filters.TimeRange) (total uint64, err error)
@@ -84,6 +84,7 @@ type (
 		GetTopProposedBlocksValidators() (items []dmodels.ValidatorValue, err error)
 		GetMostJailedValidators() (items []dmodels.ValidatorValue, err error)
 		GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, err error)
+		GetMissedBlocksCount(filter filters.MissedBlocks) (total uint64, err error)
 	}
 
 	Cache interface {
