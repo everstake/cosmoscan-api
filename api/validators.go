@@ -90,3 +90,18 @@ func (api *API) GetValidatorBalance(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonData(w, resp)
 }
+
+func (api *API) GetValidatorBlocksStat(w http.ResponseWriter, r *http.Request) {
+	address, ok := mux.Vars(r)["address"]
+	if !ok || address == "" {
+		jsonBadRequest(w, "invalid address")
+		return
+	}
+	resp, err := api.svc.GetValidatorBlocksStat(address)
+	if err != nil {
+		log.Error("API GetValidatorBlocksStat: svc.GetValidatorBlocksStat: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
+}

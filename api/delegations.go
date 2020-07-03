@@ -67,3 +67,29 @@ func (api *API) GetValidatorDelegatorsAgg(w http.ResponseWriter, r *http.Request
 	}
 	jsonData(w, resp)
 }
+
+func (api *API) GetValidatorDelegators(w http.ResponseWriter, r *http.Request) {
+	address, ok := mux.Vars(r)["address"]
+	if !ok || address == "" {
+		jsonBadRequest(w, "invalid address")
+		return
+	}
+	var filter filters.ValidatorDelegators
+	err := api.queryDecoder.Decode(&filter, r.URL.Query())
+	if err != nil {
+		log.Debug("API Decode: %s", err.Error())
+		jsonBadRequest(w, "")
+		return
+	}
+	if filter.Limit > 20 {
+		filter.Limit = 20
+	}
+	filter.Validator = address
+	resp, err := api.svc.GetValidatorDelegators(filter)
+	if err != nil {
+		log.Error("API GetValidatorDelegators: svc.GetValidatorDelegators: %s", err.Error())
+		jsonError(w)
+		return
+	}
+	jsonData(w, resp)
+}

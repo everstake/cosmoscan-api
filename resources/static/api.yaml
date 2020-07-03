@@ -770,6 +770,177 @@ paths:
                           type: string
                         fee:
                           type: number
+  /validator/{address}:
+    get:
+      parameters:
+        - in: path
+          name: address
+          required: true
+          schema:
+            type: string
+      tags:
+        - Services
+      summary: Get validator info
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  website:
+                    type: string
+                  operator_address:
+                    type: string
+                  acc_address:
+                    type: string
+                  cons_address:
+                    type: string
+                  percent_power:
+                    type: number
+                  power:
+                    type: number
+                  self_stake:
+                    type: number
+                  fee:
+                    type: number
+                  blocks_proposed:
+                    type: number
+                  delegators:
+                    type: number
+                  power_24_change:
+                    type: number
+                  governance_votes:
+                    type: number
+  /validator/{address}/balance:
+    get:
+      parameters:
+        - in: path
+          name: address
+          required: true
+          schema:
+            type: string
+      tags:
+        - Services
+      summary: Get validator balance
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  self_delegated:
+                    type: number
+                  other_delegated:
+                    type: number
+                  available:
+                    type: number
+  /validator/{address}/delegations/agg:
+    get:
+      parameters:
+        - in: path
+          name: address
+          required: true
+          schema:
+            type: string
+      tags:
+        - Services
+      summary: Get aggregeted validator delegations
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /validator/{address}/delegators/agg:
+    get:
+      parameters:
+        - in: path
+          name: address
+          required: true
+          schema:
+            type: string
+      tags:
+        - Services
+      summary: Get aggregeted validator delegators
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /validator/{address}/blocks/stats:
+    get:
+      parameters:
+        - in: path
+          name: address
+          required: true
+          schema:
+            type: string
+      tags:
+        - Services
+      summary: Get validator block stats
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proposed:
+                    type: number
+                  missed_validations:
+                    type: number
+                  revenue:
+                    type: number
+  /validator/{address}/delegators:
+    get:
+      parameters:
+        - in: path
+          name: address
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            maximum: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      tags:
+        - Services
+      summary: Get list of validator delegators
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    delegator:
+                      type: string
+                    amount:
+                      type: number
+                    since:
+                      type: number
+                    delta:
+                      type: number
 components:
   schemas:
     agg_item:

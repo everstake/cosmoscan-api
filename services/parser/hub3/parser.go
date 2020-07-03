@@ -179,7 +179,6 @@ func (p *Parser) runFetcher() {
 						ID:         id,
 						Height:     block.Block.Header.Height,
 						Validator:  address,
-						IsProposer: address == block.BlockMeta.Header.ProposerAddress,
 						CreatedAt:  block.BlockMeta.Header.Time,
 					})
 				}

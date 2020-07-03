@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/smodels"
+	"github.com/shopspring/decimal"
 )
 
 const topProposedBlocksValidatorsKey = "topProposedBlocksValidatorsKey"
+const rewardPerBlock = 4.0
 
 func (s *ServiceFacade) GetAggBlocksCount(filter filters.Agg) (items []smodels.AggItem, err error) {
 	items, err = s.dao.GetAggBlocksCount(filter)
@@ -32,7 +34,7 @@ func (s *ServiceFacade) GetAggUniqBlockValidators(filter filters.Agg) (items []s
 	return items, nil
 }
 
-func (s *ServiceFacade) GetValidatorBlockStat(validatorAddress string) (stat smodels.ValidatorBlocksStat, err error) {
+func (s *ServiceFacade) GetValidatorBlocksStat(validatorAddress string) (stat smodels.ValidatorBlocksStat, err error) {
 	validator, err := s.GetValidator(validatorAddress)
 	if err != nil {
 		return stat, fmt.Errorf("GetValidator: %s", err.Error())
@@ -49,6 +51,6 @@ func (s *ServiceFacade) GetValidatorBlockStat(validatorAddress string) (stat smo
 	if err != nil {
 		return stat, fmt.Errorf("dao.GetMissedBlocksCount: %s", err.Error())
 	}
-	// todo revenue
+	stat.Revenue = decimal.NewFromFloat(rewardPerBlock)
 	return stat, nil
 }

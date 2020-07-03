@@ -108,7 +108,7 @@ func (db DB) GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, er
 	return values, err
 }
 
-func (db DB) GetValidatorsDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error) {
+func (db DB) GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error) {
 	query := `SELECT  * FROM
 	(SELECT dlg_delegator as delegator, sum(dlg_amount) as amount, min(dlg_created_at) as since
 	FROM delegations

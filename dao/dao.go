@@ -85,6 +85,7 @@ type (
 		GetMostJailedValidators() (items []dmodels.ValidatorValue, err error)
 		GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, err error)
 		GetMissedBlocksCount(filter filters.MissedBlocks) (total uint64, err error)
+		GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error)
 	}
 
 	Cache interface {

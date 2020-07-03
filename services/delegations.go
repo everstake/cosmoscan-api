@@ -75,3 +75,11 @@ func (s *ServiceFacade) GetValidatorDelegatorsAgg(validatorAddress string) (item
 	s.dao.CacheSet(getValidatorDelegatorsAggCacheKey, items, time.Hour)
 	return items, nil
 }
+
+func (s *ServiceFacade) GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error) {
+	items, err = s.dao.GetValidatorDelegators(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetValidatorDelegators: %s", err.Error())
+	}
+	return items, nil
+}

@@ -11,7 +11,7 @@ func (db DB) CreateMissedBlocks(blocks []dmodels.MissedBlock) error {
 	if len(blocks) == 0 {
 		return nil
 	}
-	q := squirrel.Insert(dmodels.MissedBlocks).Columns("mib_id", "mib_height", "mib_validator", "mib_is_proposer", "mib_created_at")
+	q := squirrel.Insert(dmodels.MissedBlocks).Columns("mib_id", "mib_height", "mib_validator", "mib_created_at")
 	for _, block := range blocks {
 		if block.ID == "" {
 			return fmt.Errorf("field ProposalID can not be empty")
@@ -25,7 +25,7 @@ func (db DB) CreateMissedBlocks(blocks []dmodels.MissedBlock) error {
 		if block.CreatedAt.IsZero() {
 			return fmt.Errorf("field CreatedAt can not be 0")
 		}
-		q = q.Values(block.ID, block.Height, block.Validator, block.IsProposer, block.CreatedAt)
+		q = q.Values(block.ID, block.Height, block.Validator, block.CreatedAt)
 	}
 	return db.Insert(q)
 }
