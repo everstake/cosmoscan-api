@@ -530,6 +530,21 @@ paths:
           required: false
           schema:
             type: number
+        - name: voters
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
       summary: Get proposal votes
       responses:
         200:
