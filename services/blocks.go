@@ -51,6 +51,6 @@ func (s *ServiceFacade) GetValidatorBlocksStat(validatorAddress string) (stat sm
 	if err != nil {
 		return stat, fmt.Errorf("dao.GetMissedBlocksCount: %s", err.Error())
 	}
-	stat.Revenue = decimal.NewFromFloat(rewardPerBlock)
+	stat.Revenue = decimal.NewFromFloat(rewardPerBlock).Mul(decimal.NewFromInt(int64(stat.Proposed)))
 	return stat, nil
 }

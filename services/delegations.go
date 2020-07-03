@@ -29,6 +29,9 @@ func (s *ServiceFacade) GetAggUndelegationsVolume(filter filters.Agg) (items []s
 
 func (s *ServiceFacade) GetValidatorDelegationsAgg(validatorAddress string) (items []smodels.AggItem, err error) {
 	validator, err := s.GetValidator(validatorAddress)
+	if err != nil {
+		return nil, fmt.Errorf("GetValidator: %s", err.Error())
+	}
 	items, err = s.dao.GetAggDelegationsVolume(filters.DelegationsAgg{
 		Agg: filters.Agg{
 			By:   filters.AggByDay,
@@ -40,12 +43,11 @@ func (s *ServiceFacade) GetValidatorDelegationsAgg(validatorAddress string) (ite
 	if err != nil {
 		return nil, fmt.Errorf("dao.GetAggDelegationsVolume: %s", err.Error())
 	}
-	value := validator.Power
+	powerValue := validator.Power
 	for i := len(items) - 1; i >= 0; i-- {
-		item := items[i]
-		item.Value = value
-		items[i] = item
-		value = value.Sub(item.Value)
+		v := items[i].Value
+		items[i].Value = powerValue
+		powerValue = items[i].Value.Sub(v)
 	}
 	return items, nil
 }
@@ -56,7 +58,7 @@ func (s *ServiceFacade) GetValidatorDelegatorsAgg(validatorAddress string) (item
 		return data.([]smodels.AggItem), nil
 	}
 	for i := 29; i >= 0; i-- {
-		y, m, d := time.Now().Add(time.Hour * 24 * time.Duration(i)).Date()
+		y, m, d := time.Now().Add(-time.Hour * 24 * time.Duration(i)).Date()
 		date := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 		total, err := s.dao.GetDelegatorsTotal(filters.Delegators{
 			TimeRange: filters.TimeRange{

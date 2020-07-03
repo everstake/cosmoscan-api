@@ -58,7 +58,6 @@ func (api *API) GetValidatorsDelegatorsTotal(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	jsonData(w, resp)
-
 }
 
 func (api *API) GetValidator(w http.ResponseWriter, r *http.Request) {

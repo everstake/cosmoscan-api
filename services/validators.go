@@ -287,9 +287,19 @@ func (s *ServiceFacade) GetFeeRanges() (items []smodels.FeeRange, err error) {
 }
 
 func (s *ServiceFacade) GetValidatorsDelegatorsTotal() (values []dmodels.ValidatorValue, err error) {
+	validatorsMap, err := s.GetValidatorMap()
+	if err != nil {
+		return nil, fmt.Errorf("GetValidatorMap: %s", err.Error())
+	}
 	values, err = s.dao.GetValidatorsDelegatorsTotal()
 	if err != nil {
 		return nil, fmt.Errorf("dao.GetValidatorsDelegatorsTotal: %s", err.Error())
+	}
+	for i, v := range values {
+		validator, found := validatorsMap[v.Validator]
+		if found {
+			values[i].Validator = validator.Description.Moniker
+		}
 	}
 	return values, nil
 }

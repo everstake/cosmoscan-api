@@ -3,8 +3,8 @@ package dmodels
 import "github.com/shopspring/decimal"
 
 type ValidatorDelegator struct {
-	Delegator string          `schema:"delegator"`
-	Amount    decimal.Decimal `schema:"amount"`
-	Since     Time            `schema:"since"`
-	Delta     decimal.Decimal `schema:"delta"`
+	Delegator string          `json:"delegator"`
+	Amount    decimal.Decimal `json:"amount"`
+	Since     Time            `json:"since"`
+	Delta     decimal.Decimal `json:"delta"`
 }
