@@ -356,6 +356,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/agg_item'
+  /unbonding/volume/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted unbonding volume
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
+  /bonded-ratio/agg:
+    get:
+      tags:
+        - Services
+      parameters:
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: number
+          description: timestamp in seconds
+      summary: Get aggregeted bonded ratio
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/agg_item'
   /network/stats:
     get:
       tags:

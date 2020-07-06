@@ -27,6 +27,28 @@ func (s *ServiceFacade) GetAggUndelegationsVolume(filter filters.Agg) (items []s
 	return items, nil
 }
 
+func (s *ServiceFacade) GetAggUnbondingVolume(filter filters.Agg) (items []smodels.AggItem, err error) {
+	undelegationItems, err := s.dao.GetAggUndelegationsVolume(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetAggUndelegationsVolume: %s", err.Error())
+	}
+	items = make([]smodels.AggItem, len(undelegationItems))
+	for i, item := range undelegationItems {
+		total, err := s.dao.GetUndelegationsVolume(filters.TimeRange{
+			From: dmodels.NewTime(item.Time.Add(-time.Hour * 24 * 21)),
+			To:   item.Time,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("dao.GetUndelegationsVolume: %s", err.Error())
+		}
+		items[i] = smodels.AggItem{
+			Time:  item.Time,
+			Value: total,
+		}
+	}
+	return items, nil
+}
+
 func (s *ServiceFacade) GetValidatorDelegationsAgg(validatorAddress string) (items []smodels.AggItem, err error) {
 	validator, err := s.GetValidator(validatorAddress)
 	if err != nil {

@@ -28,6 +28,10 @@ func (api *API) GetAggUndelegationsVolume(w http.ResponseWriter, r *http.Request
 	api.aggHandler(w, r, api.svc.GetAggUndelegationsVolume)
 }
 
+func (api *API) GetAggUnbondingVolume(w http.ResponseWriter, r *http.Request) {
+	api.aggHandler(w, r, api.svc.GetAggUnbondingVolume)
+}
+
 func (api *API) GetStakingPie(w http.ResponseWriter, r *http.Request) {
 	resp, err := api.svc.GetStakingPie()
 	if err != nil {
