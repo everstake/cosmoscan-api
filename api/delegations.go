@@ -81,7 +81,7 @@ func (api *API) GetValidatorDelegators(w http.ResponseWriter, r *http.Request) {
 		jsonBadRequest(w, "")
 		return
 	}
-	if filter.Limit > 20 {
+	if filter.Limit > 20 || filter.Limit == 0 {
 		filter.Limit = 20
 	}
 	filter.Validator = address

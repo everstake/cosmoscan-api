@@ -50,7 +50,7 @@ type (
 		GetValidatorDelegationsAgg(validatorAddress string) (items []smodels.AggItem, err error)
 		GetValidatorDelegatorsAgg(validatorAddress string) (items []smodels.AggItem, err error)
 		GetValidatorBlocksStat(validatorAddress string) (stat smodels.ValidatorBlocksStat, err error)
-		GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error)
+		GetValidatorDelegators(filter filters.ValidatorDelegators) (resp smodels.PaginatableResponse, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

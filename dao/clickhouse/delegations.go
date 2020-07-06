@@ -134,3 +134,14 @@ func (db DB) GetValidatorDelegators(filter filters.ValidatorDelegators) (items [
 	err = db.conn.Select(&items, q, args...)
 	return items, err
 }
+
+func (db DB) GetValidatorDelegatorsTotal(filter filters.ValidatorDelegators) (total uint64, err error) {
+	q1 := squirrel.Select("sum(dlg_amount) as amount").
+		From(dmodels.DelegationsTable).
+		Where(squirrel.Eq{"dlg_validator": filter.Validator}).
+		GroupBy("dlg_delegator").
+		Having(squirrel.Gt{"amount": 0})
+	q := squirrel.Select("count(*) as total").FromSelect(q1, "t")
+	err = db.FindFirst(&total, q)
+	return total, err
+}

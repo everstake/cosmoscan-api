@@ -944,18 +944,23 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    delegator:
-                      type: string
-                    amount:
-                      type: number
-                    since:
-                      type: number
-                    delta:
-                      type: number
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        delegator:
+                          type: string
+                        amount:
+                          type: number
+                        since:
+                          type: number
+                        delta:
+                          type: number
+                  total:
+                    type: number
 components:
   schemas:
     agg_item:

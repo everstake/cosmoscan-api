@@ -78,10 +78,17 @@ func (s *ServiceFacade) GetValidatorDelegatorsAgg(validatorAddress string) (item
 	return items, nil
 }
 
-func (s *ServiceFacade) GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error) {
-	items, err = s.dao.GetValidatorDelegators(filter)
+func (s *ServiceFacade) GetValidatorDelegators(filter filters.ValidatorDelegators) (resp smodels.PaginatableResponse, err error) {
+	items, err := s.dao.GetValidatorDelegators(filter)
 	if err != nil {
-		return nil, fmt.Errorf("dao.GetValidatorDelegators: %s", err.Error())
+		return resp, fmt.Errorf("dao.GetValidatorDelegators: %s", err.Error())
 	}
-	return items, nil
+	total, err := s.dao.GetValidatorDelegatorsTotal(filter)
+	if err != nil {
+		return resp, fmt.Errorf("dao.GetValidatorDelegatorsTotal: %s", err.Error())
+	}
+	return smodels.PaginatableResponse{
+		Items: items,
+		Total: total,
+	}, nil
 }
