@@ -287,10 +287,7 @@ func (s *ServiceFacade) GetAggWhaleAccounts(filter filters.Agg) (items []smodels
 }
 
 func (s *ServiceFacade) GetAggBondedRatio(filter filters.Agg) (items []smodels.AggItem, err error) {
-	items, err = s.dao.GetAggHistoricalStatesByField(filters.Agg{
-		By:   filters.AggByDay,
-		From: dmodels.NewTime(time.Now().Add(-time.Hour * 24 * 30)),
-	}, "his_staked_ratio")
+	items, err = s.dao.GetAggHistoricalStatesByField(filter, "his_staked_ratio")
 	if err != nil {
 		return nil, fmt.Errorf("dao.GetAggHistoricalStatesByField: %s", err.Error())
 	}
