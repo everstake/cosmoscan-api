@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const getValidatorDelegatorsAggCacheKey = "GetValidatorDelegatorsAgg"
-
 func (s *ServiceFacade) GetAggDelegationsVolume(filter filters.DelegationsAgg) (items []smodels.AggItem, err error) {
 	items, err = s.dao.GetAggDelegationsVolume(filter)
 	if err != nil {
@@ -75,10 +73,6 @@ func (s *ServiceFacade) GetValidatorDelegationsAgg(validatorAddress string) (ite
 }
 
 func (s *ServiceFacade) GetValidatorDelegatorsAgg(validatorAddress string) (items []smodels.AggItem, err error) {
-	data, found := s.dao.CacheGet(getValidatorDelegatorsAggCacheKey)
-	if found {
-		return data.([]smodels.AggItem), nil
-	}
 	for i := 29; i >= 0; i-- {
 		y, m, d := time.Now().Add(-time.Hour * 24 * time.Duration(i)).Date()
 		date := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
@@ -96,7 +90,6 @@ func (s *ServiceFacade) GetValidatorDelegatorsAgg(validatorAddress string) (item
 			Value: decimal.NewFromInt(int64(total)),
 		})
 	}
-	s.dao.CacheSet(getValidatorDelegatorsAggCacheKey, items, time.Hour)
 	return items, nil
 }
 
