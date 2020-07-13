@@ -131,6 +131,13 @@ type (
 			Balance          decimal.Decimal `json:"balance"`
 		} `json:"result"`
 	}
+	ProposalVotersResult struct {
+		Result []struct {
+			ProposalID uint64 `json:"proposal_id,string"`
+			Voter      string `json:"voter"`
+			Option     string `json:"option"`
+		} `json:"result"`
+	}
 )
 
 func NewAPI(cfg config.Config) *API {
@@ -275,6 +282,14 @@ func (api API) GetDelegatorValidatorStake(delegator string, validator string) (a
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	return result.Result.Shares.Div(PrecisionDiv), nil
+}
+
+func (api API) GetProposalVoters(id uint64) (result ProposalVotersResult, err error) {
+	err = api.request(fmt.Sprintf("/gov/proposals/%d/votes", id), &result)
+	if err != nil {
+		return result, fmt.Errorf("request: %s", err.Error())
+	}
+	return result, nil
 }
 
 func (r *AmountResult) Amount() decimal.Decimal {

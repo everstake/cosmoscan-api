@@ -95,15 +95,52 @@ func (s *ServiceFacade) UpdateProposals() {
 			txHash = hps[0].TxHash
 		}
 
-		yes := decimal.NewFromInt(p.FinalTallyResult.Yes).Div(node.PrecisionDiv)
-		abstain := decimal.NewFromInt(p.FinalTallyResult.Abstain).Div(node.PrecisionDiv)
-		no := decimal.NewFromInt(p.FinalTallyResult.No).Div(node.PrecisionDiv)
-		noWithVeto := decimal.NewFromInt(p.FinalTallyResult.NoWithVeto).Div(node.PrecisionDiv)
+		var yes, abstain, no, noWithVeto decimal.Decimal
+		if p.ProposalStatus == "VotingPeriod" {
+			voters, err := s.node.GetProposalVoters(p.ID)
+			if err != nil {
+				log.Error("UpdateProposals: node.GetProposalVoters: %s", err.Error())
+			} else {
+				for _, v := range voters.Result {
+					var amount decimal.Decimal
+					if val, ok := validatorsMap[v.Voter]; ok {
+						amount = val.DelegatorShares.Div(node.PrecisionDiv)
+					} else {
+						amount, err = s.node.GetStake(v.Voter)
+						if err != nil {
+							log.Error("UpdateProposals: node.GetStake: %s", err.Error())
+							continue
+						}
+					}
+
+					switch v.Option {
+					case "Yes":
+						yes = yes.Add(amount)
+					case "No":
+						no = no.Add(amount)
+					case "Abstain":
+						abstain = abstain.Add(amount)
+					case "NoWithVeto":
+						noWithVeto = noWithVeto.Add(amount)
+					}
+				}
+			}
+		} else {
+			yes = decimal.NewFromInt(p.FinalTallyResult.Yes).Div(node.PrecisionDiv)
+			abstain = decimal.NewFromInt(p.FinalTallyResult.Abstain).Div(node.PrecisionDiv)
+			no = decimal.NewFromInt(p.FinalTallyResult.No).Div(node.PrecisionDiv)
+			noWithVeto = decimal.NewFromInt(p.FinalTallyResult.NoWithVeto).Div(node.PrecisionDiv)
+		}
 
 		turnout := decimal.Zero
 		if !totalStake.Result.BondedTokens.IsZero() {
 			turnout = yes.Add(abstain).Add(no).Add(noWithVeto).Div(totalStake.Result.BondedTokens)
 			turnout = turnout.Mul(decimal.NewFromFloat(100)).Truncate(2)
+		}
+
+		a, ok := validatorsMap[proposer]
+		if ok {
+			proposer = a.Description.Moniker
 		}
 
 		proposal := dmodels.Proposal{
