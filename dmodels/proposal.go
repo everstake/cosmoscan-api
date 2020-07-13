@@ -12,6 +12,7 @@ type Proposal struct {
 	TxHash            string          `db:"pro_tx_hash" json:"tx_hash"`
 	Type              string          `db:"pro_type" json:"type"`
 	Proposer          string          `db:"pro_proposer" json:"proposer"`
+	ProposerAddress   string          `db:"pro_proposer_address" json:"proposer_address"`
 	Title             string          `db:"pro_title" json:"title"`
 	Description       string          `db:"pro_description" json:"description"`
 	Status            string          `db:"pro_status" json:"status"`

@@ -62,7 +62,7 @@ func (s *ServiceFacade) UpdateProposals() {
 			participationRate = decimal.NewFromFloat(float64(votersTotal) / float64(totalAccounts) * 100).Truncate(2)
 		}
 
-		proposer, err := s.node.GetProposalProposer(p.ID)
+		proposerAddress, err := s.node.GetProposalProposer(p.ID)
 		if err != nil {
 			log.Error("UpdateProposals: node.GetProposalProposer: %s", err.Error())
 			return
@@ -138,7 +138,8 @@ func (s *ServiceFacade) UpdateProposals() {
 			turnout = turnout.Mul(decimal.NewFromFloat(100)).Truncate(2)
 		}
 
-		a, ok := validatorsMap[proposer]
+		proposer := proposerAddress
+		a, ok := validatorsMap[proposerAddress]
 		if ok {
 			proposer = a.Description.Moniker
 		}
@@ -147,6 +148,7 @@ func (s *ServiceFacade) UpdateProposals() {
 			ID:                p.ID,
 			TxHash:            txHash,
 			Proposer:          proposer,
+			ProposerAddress:   proposerAddress,
 			Type:              p.Content.Type,
 			Title:             p.Content.Value.Title,
 			Description:       p.Content.Value.Description,

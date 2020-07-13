@@ -60,6 +60,7 @@ create table proposals
         primary key,
     pro_tx_hash            varchar(255)                                                  not null,
     pro_proposer           varchar(255)                                                  not null,
+    pro_proposer_address   varchar(255)                                                  not null,
     pro_type               varchar(255)                                                  not null,
     pro_title              varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci not null,
     pro_description        text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci         null,
