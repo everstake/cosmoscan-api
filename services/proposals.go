@@ -142,6 +142,7 @@ func (s *ServiceFacade) UpdateProposals() {
 		a, ok := validatorsMap[proposerAddress]
 		if ok {
 			proposer = a.Description.Moniker
+			proposerAddress = a.OperatorAddress
 		}
 
 		proposal := dmodels.Proposal{
