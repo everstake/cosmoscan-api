@@ -138,6 +138,14 @@ type (
 			Option     string `json:"option"`
 		} `json:"result"`
 	}
+	ProposalTallyResult struct {
+		Result struct {
+			Yes        int64 `json:"yes,string"`
+			Abstain    int64 `json:"abstain,string"`
+			No         int64 `json:"no,string"`
+			NoWithVeto int64 `json:"no_with_veto,string"`
+		} `json:"result"`
+	}
 )
 
 func NewAPI(cfg config.Config) *API {
@@ -286,6 +294,13 @@ func (api API) GetDelegatorValidatorStake(delegator string, validator string) (a
 
 func (api API) GetProposalVoters(id uint64) (result ProposalVotersResult, err error) {
 	err = api.request(fmt.Sprintf("/gov/proposals/%d/votes", id), &result)
+	if err != nil {
+		return result, fmt.Errorf("request: %s", err.Error())
+	}
+	return result, nil
+}
+func (api API) ProposalTallyResult(id uint64) (result ProposalTallyResult, err error) {
+	err = api.request(fmt.Sprintf("/gov/proposals/%d/tally", id), &result)
 	if err != nil {
 		return result, fmt.Errorf("request: %s", err.Error())
 	}

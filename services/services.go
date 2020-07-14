@@ -70,6 +70,7 @@ type (
 		GetProposalProposer(id uint64) (proposer string, err error)
 		GetDelegatorValidatorStake(delegator string, validator string) (amount decimal.Decimal, err error)
 		GetProposalVoters(id uint64) (result node.ProposalVotersResult, err error)
+		ProposalTallyResult(id uint64) (result node.ProposalTallyResult, err error)
 	}
 
 	ServiceFacade struct {

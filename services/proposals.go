@@ -97,34 +97,15 @@ func (s *ServiceFacade) UpdateProposals() {
 
 		var yes, abstain, no, noWithVeto decimal.Decimal
 		if p.ProposalStatus == "VotingPeriod" {
-			voters, err := s.node.GetProposalVoters(p.ID)
+			tally, err := s.node.ProposalTallyResult(p.ID)
 			if err != nil {
-				log.Error("UpdateProposals: node.GetProposalVoters: %s", err.Error())
-			} else {
-				for _, v := range voters.Result {
-					var amount decimal.Decimal
-					if val, ok := validatorsMap[v.Voter]; ok {
-						amount = val.DelegatorShares.Div(node.PrecisionDiv)
-					} else {
-						amount, err = s.node.GetStake(v.Voter)
-						if err != nil {
-							log.Error("UpdateProposals: node.GetStake: %s", err.Error())
-							continue
-						}
-					}
-
-					switch v.Option {
-					case "Yes":
-						yes = yes.Add(amount)
-					case "No":
-						no = no.Add(amount)
-					case "Abstain":
-						abstain = abstain.Add(amount)
-					case "NoWithVeto":
-						noWithVeto = noWithVeto.Add(amount)
-					}
-				}
+				log.Error("UpdateProposals: node.ProposalTallyResult: %s", err.Error())
+				return
 			}
+			yes = decimal.NewFromInt(tally.Result.Yes).Div(node.PrecisionDiv)
+			abstain = decimal.NewFromInt(tally.Result.Abstain).Div(node.PrecisionDiv)
+			no = decimal.NewFromInt(tally.Result.No).Div(node.PrecisionDiv)
+			noWithVeto = decimal.NewFromInt(tally.Result.NoWithVeto).Div(node.PrecisionDiv)
 		} else {
 			yes = decimal.NewFromInt(p.FinalTallyResult.Yes).Div(node.PrecisionDiv)
 			abstain = decimal.NewFromInt(p.FinalTallyResult.Abstain).Div(node.PrecisionDiv)
