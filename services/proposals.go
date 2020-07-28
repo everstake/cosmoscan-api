@@ -184,12 +184,16 @@ func (s *ServiceFacade) GetProposalVotes(filter filters.ProposalVotes) (items []
 			title = validator.Description.Moniker
 			isValidator = ok
 		}
-		// replace old votes for this user
-		for i, item := range items {
+		// ignore same voter
+		found := false
+		for _, item := range items {
 			if item.Voter == vote.Voter {
-				items = append(items[:i], items[i+1:]...)
+				found = true
 				break
 			}
+		}
+		if found {
+			continue
 		}
 		items = append(items, smodels.ProposalVote{
 			Title:        title,
