@@ -19,6 +19,7 @@ func (s *ServiceFacade) GetNetworkStates(filter filters.Stats) (map[string][]dec
 	filter.Titles = []string{
 		dmodels.StatsTotalStakingBalance,
 		dmodels.StatsNumberDelegators,
+		dmodels.StatsTotalDelegators,
 		dmodels.StatsNumberMultiDelegators,
 		dmodels.StatsTransfersVolume,
 		dmodels.StatsFeeVolume,
@@ -67,6 +68,17 @@ func (s *ServiceFacade) MakeStats() {
 					return value, fmt.Errorf("node.GetStakingPool: %s", err.Error())
 				}
 				return stakingPool.Result.BondedTokens, nil
+			},
+		},
+		{
+			title: dmodels.StatsTotalDelegators,
+			fetch: func() (value decimal.Decimal, err error) {
+				total, err := s.dao.GetDelegatorsTotal(filters.Delegators{
+				})
+				if err != nil {
+					return value, fmt.Errorf("dao.GetDelegatorsTotal: %s", err.Error())
+				}
+				return decimal.NewFromInt(int64(total)), nil
 			},
 		},
 		{

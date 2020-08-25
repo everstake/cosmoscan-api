@@ -10,6 +10,7 @@ const StatsTable = "stats"
 const (
 	StatsTotalStakingBalance   = "total_staking_balance"
 	StatsNumberDelegators      = "number_delegators"
+	StatsTotalDelegators       = "total_delegators"
 	StatsNumberMultiDelegators = "number_multi_delegators"
 	StatsTransfersVolume       = "transfer_volume"
 	StatsFeeVolume             = "fee_volume"
