@@ -28,7 +28,7 @@ func (s *ServiceFacade) MakeUpdateBalances() {
 	} else {
 		// regular update
 		activeAccounts, err := s.dao.GetActiveAccounts(filters.ActiveAccounts{
-			From: time.Now().Add(time.Hour * 24 * 2),
+			From: time.Now().Add(-time.Hour * 24 * 2),
 		})
 		if err != nil {
 			log.Error("MakeUpdateBalances: dao.GetActiveAccounts: %s", err.Error())
