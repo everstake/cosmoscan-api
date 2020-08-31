@@ -125,7 +125,7 @@ func (s *ServiceFacade) makeUpdateBalance(accounts []string) {
 			log.Error("makeUpdateBalance: dao.GetAccount: %s", err.Error())
 			continue
 		}
-		if account.Stake.Equal(stake) || account.Balance.Equal(balance) {
+		if account.Stake.Equal(stake) && account.Balance.Equal(balance) {
 			continue
 		}
 		account.Balance = balance
