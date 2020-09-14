@@ -22,19 +22,21 @@ func (s *ServiceFacade) MakeUpdateBalances() {
 	accountsCh := make(chan dmodels.Account)
 	for i := 0; i < fetchers; i++ {
 		go func() {
-			select {
-			case acc := <-accountsCh:
-				for {
-					err := s.updateAccount(acc)
-					if err != nil {
-						log.Warn("MakeSmartUpdateBalances: updateAccount: %s", err.Error())
-						time.After(time.Second * 2)
-						continue
+			for {
+				select {
+				case acc := <-accountsCh:
+					for {
+						err := s.updateAccount(acc)
+						if err != nil {
+							log.Warn("MakeSmartUpdateBalances: updateAccount: %s", err.Error())
+							time.After(time.Second * 2)
+							continue
+						}
+						break
 					}
-					break
+				case <-ctx.Done():
+					return
 				}
-			case <-ctx.Done():
-				return
 			}
 		}()
 	}
