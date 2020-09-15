@@ -56,11 +56,16 @@ func (s *ServiceFacade) updateAccount(account dmodels.Account) error {
 	if err != nil {
 		return fmt.Errorf("node.GetStake: %s", err.Error())
 	}
+	unbonding, err := s.node.GetUnbonding(account.Address)
+	if err != nil {
+		return fmt.Errorf("node.GetUnbonding: %s", err.Error())
+	}
 	if balance.Equal(account.Balance) && stake.Equal(account.Stake) {
 		return nil
 	}
 	account.Balance = balance
 	account.Stake = stake
+	account.Unbonding = unbonding
 	err = s.dao.UpdateAccount(account)
 	if err != nil {
 		return fmt.Errorf("dao.UpdateAccount: %s", err.Error())
