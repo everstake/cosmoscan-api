@@ -121,12 +121,16 @@ func (s *ServiceFacade) UpdateProposals() {
 			SubmitTime:        dmodels.NewTime(p.SubmitTime),
 			DepositEndTime:    dmodels.NewTime(p.DepositEndTime),
 			TotalDeposits:     totalDeposit.Div(node.PrecisionDiv),
-			VotingStartTime:   dmodels.NewTime(p.VotingStartTime),
-			VotingEndTime:     dmodels.NewTime(p.VotingEndTime),
 			Voters:            votersTotal,
 			ParticipationRate: participationRate,
 			Turnout:           turnout,
 			Activity:          activityJson,
+		}
+		if !p.VotingStartTime.IsZero() {
+			proposal.VotingStartTime = dmodels.NewTime(p.VotingStartTime)
+		}
+		if !p.VotingEndTime.IsZero() {
+			proposal.VotingEndTime = dmodels.NewTime(p.VotingEndTime)
 		}
 		if len(proposals) == 0 {
 			err = s.dao.CreateProposals([]dmodels.Proposal{proposal})
