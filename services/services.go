@@ -50,7 +50,9 @@ type (
 		GetValidatorDelegationsAgg(validatorAddress string) (items []smodels.AggItem, err error)
 		GetValidatorDelegatorsAgg(validatorAddress string) (items []smodels.AggItem, err error)
 		GetValidatorBlocksStat(validatorAddress string) (stat smodels.ValidatorBlocksStat, err error)
-		GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error)
+		GetValidatorDelegators(filter filters.ValidatorDelegators) (resp smodels.PaginatableResponse, err error)
+		GetAggBondedRatio(filter filters.Agg) (items []smodels.AggItem, err error)
+		GetAggUnbondingVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)
@@ -67,7 +69,8 @@ type (
 		GetProposals() (proposals node.ProposalsResult, err error)
 		GetProposalProposer(id uint64) (proposer string, err error)
 		GetDelegatorValidatorStake(delegator string, validator string) (amount decimal.Decimal, err error)
-
+		GetProposalVoters(id uint64) (result node.ProposalVotersResult, err error)
+		ProposalTallyResult(id uint64) (result node.ProposalTallyResult, err error)
 	}
 
 	ServiceFacade struct {

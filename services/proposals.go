@@ -62,7 +62,7 @@ func (s *ServiceFacade) UpdateProposals() {
 			participationRate = decimal.NewFromFloat(float64(votersTotal) / float64(totalAccounts) * 100).Truncate(2)
 		}
 
-		proposer, err := s.node.GetProposalProposer(p.ID)
+		proposerAddress, err := s.node.GetProposalProposer(p.ID)
 		if err != nil {
 			log.Error("UpdateProposals: node.GetProposalProposer: %s", err.Error())
 			return
@@ -95,10 +95,23 @@ func (s *ServiceFacade) UpdateProposals() {
 			txHash = hps[0].TxHash
 		}
 
-		yes := decimal.NewFromInt(p.FinalTallyResult.Yes).Div(node.PrecisionDiv)
-		abstain := decimal.NewFromInt(p.FinalTallyResult.Abstain).Div(node.PrecisionDiv)
-		no := decimal.NewFromInt(p.FinalTallyResult.No).Div(node.PrecisionDiv)
-		noWithVeto := decimal.NewFromInt(p.FinalTallyResult.NoWithVeto).Div(node.PrecisionDiv)
+		var yes, abstain, no, noWithVeto decimal.Decimal
+		if p.ProposalStatus == "VotingPeriod" {
+			tally, err := s.node.ProposalTallyResult(p.ID)
+			if err != nil {
+				log.Error("UpdateProposals: node.ProposalTallyResult: %s", err.Error())
+				return
+			}
+			yes = decimal.NewFromInt(tally.Result.Yes).Div(node.PrecisionDiv)
+			abstain = decimal.NewFromInt(tally.Result.Abstain).Div(node.PrecisionDiv)
+			no = decimal.NewFromInt(tally.Result.No).Div(node.PrecisionDiv)
+			noWithVeto = decimal.NewFromInt(tally.Result.NoWithVeto).Div(node.PrecisionDiv)
+		} else {
+			yes = decimal.NewFromInt(p.FinalTallyResult.Yes).Div(node.PrecisionDiv)
+			abstain = decimal.NewFromInt(p.FinalTallyResult.Abstain).Div(node.PrecisionDiv)
+			no = decimal.NewFromInt(p.FinalTallyResult.No).Div(node.PrecisionDiv)
+			noWithVeto = decimal.NewFromInt(p.FinalTallyResult.NoWithVeto).Div(node.PrecisionDiv)
+		}
 
 		turnout := decimal.Zero
 		if !totalStake.Result.BondedTokens.IsZero() {
@@ -106,10 +119,18 @@ func (s *ServiceFacade) UpdateProposals() {
 			turnout = turnout.Mul(decimal.NewFromFloat(100)).Truncate(2)
 		}
 
+		proposer := proposerAddress
+		a, ok := validatorsMap[proposerAddress]
+		if ok {
+			proposer = a.Description.Moniker
+			proposerAddress = a.OperatorAddress
+		}
+
 		proposal := dmodels.Proposal{
 			ID:                p.ID,
 			TxHash:            txHash,
 			Proposer:          proposer,
+			ProposerAddress:   proposerAddress,
 			Type:              p.Content.Type,
 			Title:             p.Content.Value.Title,
 			Description:       p.Content.Value.Description,
@@ -166,6 +187,17 @@ func (s *ServiceFacade) GetProposalVotes(filter filters.ProposalVotes) (items []
 		if ok {
 			title = validator.Description.Moniker
 			isValidator = ok
+		}
+		// ignore same voter
+		found := false
+		for _, item := range items {
+			if item.Voter == vote.Voter {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
 		}
 		items = append(items, smodels.ProposalVote{
 			Title:        title,

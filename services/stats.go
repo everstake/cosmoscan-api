@@ -19,6 +19,7 @@ func (s *ServiceFacade) GetNetworkStates(filter filters.Stats) (map[string][]dec
 	filter.Titles = []string{
 		dmodels.StatsTotalStakingBalance,
 		dmodels.StatsNumberDelegators,
+		dmodels.StatsTotalDelegators,
 		dmodels.StatsNumberMultiDelegators,
 		dmodels.StatsTransfersVolume,
 		dmodels.StatsFeeVolume,
@@ -67,6 +68,17 @@ func (s *ServiceFacade) MakeStats() {
 					return value, fmt.Errorf("node.GetStakingPool: %s", err.Error())
 				}
 				return stakingPool.Result.BondedTokens, nil
+			},
+		},
+		{
+			title: dmodels.StatsTotalDelegators,
+			fetch: func() (value decimal.Decimal, err error) {
+				total, err := s.dao.GetDelegatorsTotal(filters.Delegators{
+				})
+				if err != nil {
+					return value, fmt.Errorf("dao.GetDelegatorsTotal: %s", err.Error())
+				}
+				return decimal.NewFromInt(int64(total)), nil
 			},
 		},
 		{
@@ -282,6 +294,14 @@ func (s *ServiceFacade) GetAggWhaleAccounts(filter filters.Agg) (items []smodels
 	items, err = s.dao.GetAggWhaleAccounts(filter)
 	if err != nil {
 		return nil, fmt.Errorf("dao.GetAggWhaleAccounts: %s", err.Error())
+	}
+	return items, nil
+}
+
+func (s *ServiceFacade) GetAggBondedRatio(filter filters.Agg) (items []smodels.AggItem, err error) {
+	items, err = s.dao.GetAggHistoricalStatesByField(filter, "his_staked_ratio")
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetAggHistoricalStatesByField: %s", err.Error())
 	}
 	return items, nil
 }

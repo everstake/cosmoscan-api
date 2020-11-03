@@ -107,6 +107,8 @@ func (api *API) loadRoutes() {
 		{Path: "/blocks/operations/agg", Method: http.MethodGet, Func: api.GetAvgOperationsPerBlock},
 		{Path: "/delegations/volume/agg", Method: http.MethodGet, Func: api.GetAggDelegationsVolume},
 		{Path: "/undelegations/volume/agg", Method: http.MethodGet, Func: api.GetAggUndelegationsVolume},
+		{Path: "/unbonding/volume/agg", Method: http.MethodGet, Func: api.GetAggUnbondingVolume},
+		{Path: "/bonded-ratio/agg", Method: http.MethodGet, Func: api.GetAggBondedRatio},
 		{Path: "/network/stats", Method: http.MethodGet, Func: api.GetNetworkStats},
 		{Path: "/staking/pie", Method: http.MethodGet, Func: api.GetStakingPie},
 		{Path: "/proposals", Method: http.MethodGet, Func: api.GetProposals},

@@ -30,3 +30,7 @@ func (api *API) GetAggValidators33Power(w http.ResponseWriter, r *http.Request) 
 func (api *API) GetAggWhaleAccounts(w http.ResponseWriter, r *http.Request) {
 	api.aggHandler(w, r, api.svc.GetAggWhaleAccounts)
 }
+
+func (api *API) GetAggBondedRatio(w http.ResponseWriter, r *http.Request) {
+	api.aggHandler(w, r, api.svc.GetAggBondedRatio)
+}

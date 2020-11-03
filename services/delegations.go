@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const getValidatorDelegatorsAggCacheKey = "GetValidatorDelegatorsAgg"
-
 func (s *ServiceFacade) GetAggDelegationsVolume(filter filters.DelegationsAgg) (items []smodels.AggItem, err error) {
 	items, err = s.dao.GetAggDelegationsVolume(filter)
 	if err != nil {
@@ -23,6 +21,28 @@ func (s *ServiceFacade) GetAggUndelegationsVolume(filter filters.Agg) (items []s
 	items, err = s.dao.GetAggUndelegationsVolume(filter)
 	if err != nil {
 		return nil, fmt.Errorf("dao.GetAggUndelegationsVolume: %s", err.Error())
+	}
+	return items, nil
+}
+
+func (s *ServiceFacade) GetAggUnbondingVolume(filter filters.Agg) (items []smodels.AggItem, err error) {
+	undelegationItems, err := s.dao.GetAggUndelegationsVolume(filter)
+	if err != nil {
+		return nil, fmt.Errorf("dao.GetAggUndelegationsVolume: %s", err.Error())
+	}
+	items = make([]smodels.AggItem, len(undelegationItems))
+	for i, item := range undelegationItems {
+		total, err := s.dao.GetUndelegationsVolume(filters.TimeRange{
+			From: dmodels.NewTime(item.Time.Add(-time.Hour * 24 * 21)),
+			To:   item.Time,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("dao.GetUndelegationsVolume: %s", err.Error())
+		}
+		items[i] = smodels.AggItem{
+			Time:  item.Time,
+			Value: total,
+		}
 	}
 	return items, nil
 }
@@ -53,10 +73,6 @@ func (s *ServiceFacade) GetValidatorDelegationsAgg(validatorAddress string) (ite
 }
 
 func (s *ServiceFacade) GetValidatorDelegatorsAgg(validatorAddress string) (items []smodels.AggItem, err error) {
-	data, found := s.dao.CacheGet(getValidatorDelegatorsAggCacheKey)
-	if found {
-		return data.([]smodels.AggItem), nil
-	}
 	for i := 29; i >= 0; i-- {
 		y, m, d := time.Now().Add(-time.Hour * 24 * time.Duration(i)).Date()
 		date := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
@@ -74,14 +90,20 @@ func (s *ServiceFacade) GetValidatorDelegatorsAgg(validatorAddress string) (item
 			Value: decimal.NewFromInt(int64(total)),
 		})
 	}
-	s.dao.CacheSet(getValidatorDelegatorsAggCacheKey, items, time.Hour)
 	return items, nil
 }
 
-func (s *ServiceFacade) GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error) {
-	items, err = s.dao.GetValidatorDelegators(filter)
+func (s *ServiceFacade) GetValidatorDelegators(filter filters.ValidatorDelegators) (resp smodels.PaginatableResponse, err error) {
+	items, err := s.dao.GetValidatorDelegators(filter)
 	if err != nil {
-		return nil, fmt.Errorf("dao.GetValidatorDelegators: %s", err.Error())
+		return resp, fmt.Errorf("dao.GetValidatorDelegators: %s", err.Error())
 	}
-	return items, nil
+	total, err := s.dao.GetValidatorDelegatorsTotal(filter)
+	if err != nil {
+		return resp, fmt.Errorf("dao.GetValidatorDelegatorsTotal: %s", err.Error())
+	}
+	return smodels.PaginatableResponse{
+		Items: items,
+		Total: total,
+	}, nil
 }

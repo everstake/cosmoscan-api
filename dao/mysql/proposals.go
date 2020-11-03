@@ -15,6 +15,7 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 		"pro_id",
 		"pro_tx_hash",
 		"pro_proposer",
+		"pro_proposer_address",
 		"pro_type",
 		"pro_title",
 		"pro_description",
@@ -42,6 +43,7 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 			p.ID,
 			p.TxHash,
 			p.Proposer,
+			p.ProposerAddress,
 			p.Type,
 			p.Title,
 			p.Description,
@@ -85,6 +87,7 @@ func (m DB) UpdateProposal(proposal dmodels.Proposal) error {
 		Where(squirrel.Eq{"pro_id": proposal.ID}).
 		SetMap(map[string]interface{}{
 			"pro_proposer":           proposal.Proposer,
+			"pro_proposer_address":   proposal.ProposerAddress,
 			"pro_tx_hash":            proposal.TxHash,
 			"pro_type":               proposal.Type,
 			"pro_title":              proposal.Title,
