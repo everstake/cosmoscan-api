@@ -55,8 +55,8 @@ func (m DB) CreateProposals(proposals []dmodels.Proposal) error {
 			p.SubmitTime,
 			p.DepositEndTime,
 			p.TotalDeposits,
-			p.VotingStartTime,
-			p.VotingEndTime,
+			p.VotingStartTime.Time,
+			p.VotingEndTime.Time,
 			p.Voters,
 			p.ParticipationRate,
 			p.Turnout,
@@ -97,17 +97,13 @@ func (m DB) UpdateProposal(proposal dmodels.Proposal) error {
 		"pro_votes_no_with_veto": proposal.VotesNoWithVeto,
 		"pro_submit_time":        proposal.SubmitTime,
 		"pro_deposit_end_time":   proposal.DepositEndTime,
+		"pro_voting_start_time":  proposal.VotingStartTime,
+		"pro_voting_end_time":    proposal.VotingEndTime,
 		"pro_total_deposits":     proposal.TotalDeposits,
 		"pro_voters":             proposal.Voters,
 		"pro_participation_rate": proposal.ParticipationRate,
 		"pro_turnout":            proposal.Turnout,
 		"pro_activity":           proposal.Activity,
-	}
-	if !proposal.VotingStartTime.IsZero() {
-		mp["pro_voting_start_time"] = proposal.VotingStartTime
-	}
-	if !proposal.VotingEndTime.IsZero() {
-		mp["pro_voting_end_time"] = proposal.VotingEndTime
 	}
 	q := squirrel.Update(dmodels.ProposalsTable).
 		Where(squirrel.Eq{"pro_id": proposal.ID}).

@@ -10,6 +10,7 @@ import (
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
+	"time"
 )
 
 func (s *ServiceFacade) GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal, err error) {
@@ -142,13 +143,21 @@ func (s *ServiceFacade) UpdateProposals() {
 			SubmitTime:        dmodels.NewTime(p.SubmitTime),
 			DepositEndTime:    dmodels.NewTime(p.DepositEndTime),
 			TotalDeposits:     totalDeposit.Div(node.PrecisionDiv),
-			VotingStartTime:   dmodels.NewTime(p.VotingStartTime),
-			VotingEndTime:     dmodels.NewTime(p.VotingEndTime),
+			VotingStartTime: dmodels.NewTime(p.VotingStartTime),
+			VotingEndTime:   dmodels.NewTime(p.VotingEndTime),
 			Voters:            votersTotal,
 			ParticipationRate: participationRate,
 			Turnout:           turnout,
 			Activity:          activityJson,
 		}
+
+		if proposal.VotingStartTime.Unix() < 0 {
+			proposal.VotingStartTime = dmodels.Time{Time: time.Unix(0, 0)}
+		}
+		if proposal.VotingEndTime.Unix() < 0 {
+			proposal.VotingEndTime = dmodels.Time{Time: time.Unix(0, 0)}
+		}
+
 		if len(proposals) == 0 {
 			err = s.dao.CreateProposals([]dmodels.Proposal{proposal})
 		} else {
