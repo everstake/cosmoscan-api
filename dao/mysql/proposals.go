@@ -83,29 +83,34 @@ func (m DB) GetProposals(filter filters.Proposals) (proposals []dmodels.Proposal
 }
 
 func (m DB) UpdateProposal(proposal dmodels.Proposal) error {
+	mp := map[string]interface{}{
+		"pro_proposer":           proposal.Proposer,
+		"pro_proposer_address":   proposal.ProposerAddress,
+		"pro_tx_hash":            proposal.TxHash,
+		"pro_type":               proposal.Type,
+		"pro_title":              proposal.Title,
+		"pro_description":        proposal.Description,
+		"pro_status":             proposal.Status,
+		"pro_votes_yes":          proposal.VotesYes,
+		"pro_votes_abstain":      proposal.VotesAbstain,
+		"pro_votes_no":           proposal.VotesNo,
+		"pro_votes_no_with_veto": proposal.VotesNoWithVeto,
+		"pro_submit_time":        proposal.SubmitTime,
+		"pro_deposit_end_time":   proposal.DepositEndTime,
+		"pro_total_deposits":     proposal.TotalDeposits,
+		"pro_voters":             proposal.Voters,
+		"pro_participation_rate": proposal.ParticipationRate,
+		"pro_turnout":            proposal.Turnout,
+		"pro_activity":           proposal.Activity,
+	}
+	if !proposal.VotingStartTime.IsZero() {
+		mp["pro_voting_start_time"] = proposal.VotingStartTime
+	}
+	if !proposal.VotingEndTime.IsZero() {
+		mp["pro_voting_end_time"] = proposal.VotingEndTime
+	}
 	q := squirrel.Update(dmodels.ProposalsTable).
 		Where(squirrel.Eq{"pro_id": proposal.ID}).
-		SetMap(map[string]interface{}{
-			"pro_proposer":           proposal.Proposer,
-			"pro_proposer_address":   proposal.ProposerAddress,
-			"pro_tx_hash":            proposal.TxHash,
-			"pro_type":               proposal.Type,
-			"pro_title":              proposal.Title,
-			"pro_description":        proposal.Description,
-			"pro_status":             proposal.Status,
-			"pro_votes_yes":          proposal.VotesYes,
-			"pro_votes_abstain":      proposal.VotesAbstain,
-			"pro_votes_no":           proposal.VotesNo,
-			"pro_votes_no_with_veto": proposal.VotesNoWithVeto,
-			"pro_submit_time":        proposal.SubmitTime,
-			"pro_deposit_end_time":   proposal.DepositEndTime,
-			"pro_total_deposits":     proposal.TotalDeposits,
-			"pro_voting_start_time":  proposal.VotingStartTime.Time,
-			"pro_voting_end_time":    proposal.VotingEndTime.Time,
-			"pro_voters":             proposal.Voters,
-			"pro_participation_rate": proposal.ParticipationRate,
-			"pro_turnout":            proposal.Turnout,
-			"pro_activity":           proposal.Activity,
-		})
+		SetMap(mp)
 	return m.update(q)
 }
