@@ -214,7 +214,9 @@ type (
 func NewAPI(address string) *API {
 	return &API{
 		address: address,
-		client:  &http.Client{},
+		client:  &http.Client{
+			Timeout: time.Minute,
+		},
 	}
 }
 
