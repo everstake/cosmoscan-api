@@ -22,7 +22,7 @@ func (s *ServiceFacade) GetSizeOfNode() (size float64, err error) {
 	from := to.Add(-time.Hour * 24)
 	step := time.Hour / time.Second
 	params := fmt.Sprintf("&start=%d&end=%d&step=%d", from.Unix(), to.Unix(), step)
-	url := "https://eosmon.everstake.one/api/datasources/proxy/1/api/v1/query_range?query=cosmos_size_of_db%20%7B%7D" + params
+	url := "https://mon.everstake.one/api/datasources/proxy/1/api/v1/query_range?query=cosmos_size_of_db%20%7B%7D" + params
 	resp, err := http.Get(url)
 	if err != nil {
 		return size, fmt.Errorf("http.Get: %s", err.Error())
