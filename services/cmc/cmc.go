@@ -47,7 +47,7 @@ func NewCMC(cfg config.Config) *CMC {
 }
 
 func (cmc *CMC) request(endpoint string, data interface{}) error {
-	url := fmt.Sprintf("%s/%s", apiURL, endpoint)
+	url := fmt.Sprintf("%s%s", apiURL, endpoint)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return fmt.Errorf("http.NewRequest: %s", err.Error())
