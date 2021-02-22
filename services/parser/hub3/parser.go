@@ -150,41 +150,41 @@ func (p *Parser) runFetcher() {
 
 			d.blocks = append(d.blocks, dmodels.Block{
 				ID:        block.Block.Header.Height,
-				Hash:      block.BlockMeta.BlockID.Hash,
-				Proposer:  block.BlockMeta.Header.ProposerAddress,
-				CreatedAt: block.BlockMeta.Header.Time,
+				Hash:      block.BlockID.Hash,
+				Proposer:  block.Block.Header.ProposerAddress,
+				CreatedAt: block.Block.Header.Time,
 			})
 
 			// find missed blocks
-			set := make(map[int]string)
-			for i, s := range validatorsSets.Result.Validators {
+			set := make(map[string]struct{})
+			for _, s := range validatorsSets.Result.Validators {
 				address, err := types.ConsAddressFromBech32(s.Address)
 				if err != nil {
 					log.Warn("Parser: types.ConsAddressFromBech32: %s", err.Error())
 					continue
 				}
-				set[i] = hex.EncodeToString(address.Bytes())
+				set[strings.ToUpper(hex.EncodeToString(address.Bytes()))] = struct{}{}
 			}
 
-			precommits := make(map[int]struct{})
-			for _, precommit := range block.Block.LastCommit.Precommits {
-				precommits[precommit.ValidatorIndex] = struct{}{}
+			precommits := make(map[string]struct{})
+			for _, precommit := range block.Block.LastCommit.Signatures {
+				precommits[precommit.ValidatorAddress] = struct{}{}
 			}
 
-			for validatorIndex, address := range set {
-				_, ok := precommits[validatorIndex]
+			for address := range set {
+				_, ok := precommits[address]
 				if !ok {
-					id := makeHash(fmt.Sprintf("%d.%d", block.Block.Header.Height, validatorIndex))
+					id := makeHash(fmt.Sprintf("%d.%s", block.Block.Header.Height, address))
 					d.missedBlocks = append(d.missedBlocks, dmodels.MissedBlock{
-						ID:         id,
-						Height:     block.Block.Header.Height,
-						Validator:  address,
-						CreatedAt:  block.BlockMeta.Header.Time,
+						ID:        id,
+						Height:    block.Block.Header.Height,
+						Validator: address,
+						CreatedAt: block.Block.Header.Time,
 					})
 				}
 			}
 
-			pages := int(math.Ceil(float64(block.BlockMeta.Header.NumTxs) / float64(batchTxs)))
+			pages := int(math.Ceil(float64(len(block.Block.Data.Txs)) / float64(batchTxs)))
 			for page := 1; page <= pages; page++ {
 				txs, err := p.api.GetTxs(TxsFilter{
 					Limit:  batchTxs,
@@ -199,16 +199,7 @@ func (p *Parser) runFetcher() {
 
 				for _, tx := range txs.Txs {
 
-					success := true
-					if len(tx.Logs) == 0 {
-						success = false
-					} else {
-						for _, l := range tx.Logs {
-							if !l.Success {
-								success = false
-							}
-						}
-					}
+					success := tx.Code == 0
 
 					fee, err := calculateAmount(tx.Tx.Value.Fee.Amount)
 					if err != nil {
@@ -640,19 +631,21 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 	}
 
 	mp := make(map[string]decimal.Decimal)
-	for _, event := range tx.Events {
-		if event.Type == "withdraw_rewards" {
-			for i := 0; i < len(event.Attributes); i += 2 {
-				amount, err := strToAmount(event.Attributes[i].Value)
-				if err != nil {
-					return fmt.Errorf("strToAmount: %s", err.Error())
+	for _, log := range tx.Logs {
+		for _, event := range log.Events {
+			if event.Type == "withdraw_rewards" {
+				for i := 0; i < len(event.Attributes); i += 2 {
+					amount, err := strToAmount(event.Attributes[i].Value)
+					if err != nil {
+						return fmt.Errorf("strToAmount: %s", err.Error())
+					}
+					if event.Attributes[i+1].Key != "validator" {
+						return fmt.Errorf("not found validator in events")
+					}
+					mp[event.Attributes[i+1].Value] = amount
 				}
-				if event.Attributes[i+1].Key != "validator" {
-					return fmt.Errorf("not found validator in events")
-				}
-				mp[event.Attributes[i+1].Value] = amount
+				break
 			}
-			break
 		}
 	}
 
@@ -680,13 +673,15 @@ func (d *data) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error)
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
 	var id uint64
-	for _, event := range tx.Events {
-		if event.Type == "submit_proposal" {
-			for _, att := range event.Attributes {
-				if att.Key == "proposal_id" {
-					id, err = strconv.ParseUint(att.Value, 10, 64)
-					if err != nil {
-						return fmt.Errorf("strconv.ParseUint: %s", err.Error())
+	for _, log := range tx.Logs {
+		for _, event := range log.Events {
+			if event.Type == "submit_proposal" {
+				for _, att := range event.Attributes {
+					if att.Key == "proposal_id" {
+						id, err = strconv.ParseUint(att.Value, 10, 64)
+						if err != nil {
+							return fmt.Errorf("strconv.ParseUint: %s", err.Error())
+						}
 					}
 				}
 			}
@@ -769,15 +764,17 @@ func (d *data) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte
 	}
 	var amount decimal.Decimal
 	found := false
-	for _, event := range tx.Events {
-		if event.Type == "withdraw_commission" {
-			for _, att := range event.Attributes {
-				if att.Key == "amount" {
-					amount, err = strToAmount(att.Value)
-					if err != nil {
-						return fmt.Errorf("strToAmount: %s", err.Error())
+	for _, log := range tx.Logs {
+		for _, event := range log.Events {
+			if event.Type == "withdraw_commission" {
+				for _, att := range event.Attributes {
+					if att.Key == "amount" {
+						amount, err = strToAmount(att.Value)
+						if err != nil {
+							return fmt.Errorf("strToAmount: %s", err.Error())
+						}
+						found = true
 					}
-					found = true
 				}
 			}
 		}

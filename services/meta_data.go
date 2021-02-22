@@ -2,8 +2,8 @@ package services
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/everstake/cosmoscan-api/dao/filters"
+	"github.com/everstake/cosmoscan-api/services/helpers"
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
@@ -42,11 +42,11 @@ func (s *ServiceFacade) GetMetaData() (meta smodels.MetaData, err error) {
 			meta.ValidatorAvgFee = avgFee.Div(decimal.New(int64(len(validators)), 0)).Mul(decimal.New(100, 0))
 		}
 		for _, validator := range validators {
-			pk, err := types.GetPubKeyFromBech32(types.Bech32PubKeyTypeConsPub, validator.ConsensusPubkey)
+			consAddress, err := helpers.GetHexAddressFromBase64PK(validator.ConsensusPubkey.Value)
 			if err != nil {
-				return meta, fmt.Errorf("types.GetPubKeyFromBech32(%s): %s", validator.ConsensusPubkey, err.Error())
+				return meta, fmt.Errorf("helpers.GetHexAddressFromBase64PK(%s): %s", validator.ConsensusPubkey.Value, err.Error())
 			}
-			if pk.Address().String() == proposer {
+			if consAddress == proposer {
 				meta.LatestValidator = validator.Description.Moniker
 				break
 			}

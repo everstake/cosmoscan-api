@@ -21,7 +21,7 @@ type (
 	}
 	CommunityPool struct {
 		Height uint64 `json:"height,string"`
-		Result [] struct {
+		Result []struct {
 			Amount decimal.Decimal `json:"amount"`
 		} `json:"result"`
 	}
@@ -30,10 +30,11 @@ type (
 		Result []Validator `json:"result"`
 	}
 	Validator struct {
-		OperatorAddress string          `json:"operator_address"`
-		ConsensusPubkey string          `json:"consensus_pubkey"`
-		Jailed          bool            `json:"jailed"`
-		Status          int             `json:"status"`
+		OperatorAddress string `json:"operator_address"`
+		ConsensusPubkey struct {
+			Type  string `json:"type"`
+			Value string `json:"value"`
+		} `json:"consensus_pubkey"`
 		Tokens          uint64          `json:"tokens,string"`
 		DelegatorShares decimal.Decimal `json:"delegator_shares"`
 		Description     struct {
@@ -59,7 +60,7 @@ type (
 	}
 	AmountResult struct {
 		Height uint64 `json:"height,string"`
-		Result [] struct {
+		Result []struct {
 			Amount decimal.Decimal `json:"amount"`
 		} `json:"result"`
 	}
@@ -83,7 +84,7 @@ type (
 		Result []struct {
 			DelegatorAddress string `json:"delegator_address"`
 			ValidatorAddress string `json:"validator_address"`
-			Entries          [] struct {
+			Entries          []struct {
 				Balance decimal.Decimal `json:"balance"`
 			} `json:"entries"`
 		} `json:"result"`
@@ -108,7 +109,7 @@ type (
 			} `json:"final_tally_result"`
 			SubmitTime     time.Time `json:"submit_time"`
 			DepositEndTime time.Time `json:"deposit_end_time"`
-			TotalDeposit   [] struct {
+			TotalDeposit   []struct {
 				Amount decimal.Decimal `json:"amount"`
 			} `json:"total_deposit"`
 			VotingStartTime time.Time `json:"voting_start_time"`
@@ -128,7 +129,9 @@ type (
 			DelegatorAddress string          `json:"delegator_address"`
 			ValidatorAddress string          `json:"validator_address"`
 			Shares           decimal.Decimal `json:"shares"`
-			Balance          decimal.Decimal `json:"balance"`
+			Balance          struct {
+				Amount decimal.Decimal `json:"amount"`
+			} `json:"balance"`
 		} `json:"result"`
 	}
 	ProposalVotersResult struct {
