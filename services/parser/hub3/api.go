@@ -31,55 +31,53 @@ type (
 	}
 
 	Block struct {
-		//ValidatorsSets Validatorsets `json:"-"` // internal field // todo
-		BlockMeta      struct {
+		BlockID struct {
+			Hash  string `json:"hash"`
+			Parts struct {
+				Total int    `json:"total"`
+				Hash  string `json:"hash"`
+			} `json:"parts"`
+		} `json:"block_id"`
+		Block struct {
 			Header struct {
+				Version struct {
+					Block uint64 `json:"block,string"`
+				} `json:"version"`
 				ChainID     string    `json:"chain_id"`
 				Height      uint64    `json:"height,string"`
 				Time        time.Time `json:"time"`
-				NumTxs      int       `json:"num_txs,string"`
 				LastBlockID struct {
 					Hash  string `json:"hash"`
 					Parts struct {
-						Total int    `json:"total,string"`
+						Total int    `json:"total"`
 						Hash  string `json:"hash"`
 					} `json:"parts"`
 				} `json:"last_block_id"`
-				TotalTxs           int    `json:"total_txs,string"`
-				LastCommitHash     string `json:"last_commit_hash"`
-				DataHash           string `json:"data_hash"`
-				ValidatorsHash     string `json:"validators_hash"`
-				NextValidatorsHash string `json:"next_validators_hash"`
-				ConsensusHash      string `json:"consensus_hash"`
-				AppHash            string `json:"app_hash"`
-				LastResultHash     string `json:"last_result_hash"`
-				ProposerAddress    string `json:"proposer_address"`
+				ProposerAddress string `json:"proposer_address"`
 			} `json:"header"`
-			BlockID struct {
-				Hash string `json:"hash"`
-			} `json:"block_id"`
-		} `json:"block_meta"`
-		Block struct {
-			Header struct {
-				ChainID  string    `json:"chain_id"`
-				Height   uint64    `json:"height,string"`
-				Time     time.Time `json:"time"`
-				NumTxs   int       `json:"num_txs,string"`
-				Txs      []string  `json:"txs"`
-				Evidence []string  `json:"evidence"`
-			} `json:"header"`
+			Data struct {
+				Txs []string `json:"txs"`
+			} `json:"data"`
+			Evidence struct {
+				Evidence []interface{} `json:"evidence"`
+			} `json:"evidence"`
 			LastCommit struct {
-				Precommits []struct {
-					ValidatorAddress string    `json:"validator_address"`
-					ValidatorIndex   int       `json:"validator_index,string"`
-					Height           uint64    `json:"height,string"`
-					Round            int       `json:"round,string"`
-					Timestamp        time.Time `json:"timestamp"`
-					Type             int       `json:"type"`
-				} `json:"precommits"`
+				Height  string `json:"height"`
+				Round   int    `json:"round"`
+				BlockID struct {
+					Hash  string `json:"hash"`
+					Parts struct {
+						Total int    `json:"total"`
+						Hash  string `json:"hash"`
+					} `json:"parts"`
+				} `json:"block_id"`
+				Signatures []struct {
+					ValidatorAddress string `json:"validator_address"`
+				}
 			} `json:"last_commit"`
 		} `json:"block"`
 	}
+
 	TxsBatch struct {
 		TotalCount int  `json:"total_count,string"`
 		Count      int  `json:"count,string"`
@@ -88,17 +86,25 @@ type (
 		Limit      int  `json:"limit,string"`
 		Txs        []Tx `json:"txs"`
 	}
+
 	Tx struct {
-		Hash      string    `json:"txhash"`
-		Height    uint64    `json:"height,string"`
-		Timestamp time.Time `json:"timestamp"`
-		GasWanted uint64    `json:"gas_wanted,string"`
-		GasUsed   uint64    `json:"gas_used,string"`
-		Logs      []struct {
-			MsgIndex uint64 `json:"msg_index"`
-			Success  bool   `json:"success"`
+		Height uint64 `json:"height,string"`
+		Hash   string `json:"txhash"`
+		Data   string `json:"data"`
+		RawLog string `json:"raw_log"`
+		Code   int64  `json:"code"`
+		Logs   []struct {
+			Events []struct {
+				Type       string `json:"type"`
+				Attributes []struct {
+					Key   string `json:"key"`
+					Value string `json:"value"`
+				} `json:"attributes"`
+			} `json:"events"`
 		} `json:"logs"`
-		Tx struct {
+		GasWanted uint64 `json:"gas_wanted,string"`
+		GasUsed   uint64 `json:"gas_used,string"`
+		Tx        struct {
 			Type  string `json:"type"`
 			Value struct {
 				Msg []struct {
@@ -106,19 +112,13 @@ type (
 					Value json.RawMessage `json:"value"`
 				} `json:"msg"`
 				Fee struct {
-					Gas    string   `json:"gas"`
 					Amount []Amount `json:"amount"`
+					Gas    uint64   `json:"gas,string"`
 				} `json:"fee"`
 				Memo string `json:"memo"`
 			} `json:"value"`
 		} `json:"tx"`
-		Events []struct {
-			Type       string `json:"type"`
-			Attributes []struct {
-				Key   string `json:"key"`
-				Value string `json:"value"`
-			} `json:"attributes"`
-		} `json:"events"`
+		Timestamp time.Time `json:"timestamp"`
 	}
 	Amount struct {
 		Denom  string          `json:"denom"`
@@ -214,7 +214,7 @@ type (
 func NewAPI(address string) *API {
 	return &API{
 		address: address,
-		client:  &http.Client{
+		client: &http.Client{
 			Timeout: time.Minute,
 		},
 	}

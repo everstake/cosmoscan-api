@@ -7,6 +7,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
+	"github.com/everstake/cosmoscan-api/services/helpers"
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
@@ -110,12 +111,11 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 		return nil, fmt.Errorf("node.GetStakingPool: %s", err.Error())
 	}
 	for _, v := range nodeValidators {
-		key, err := types.GetPubKeyFromBech32(types.Bech32PubKeyTypeConsPub, v.ConsensusPubkey)
+		consAddress, err := helpers.GetHexAddressFromBase64PK(v.ConsensusPubkey.Value)
 		if err != nil {
-			return nil, fmt.Errorf("types.GetPubKeyFromBech32: %s", err.Error())
+			return nil, fmt.Errorf("helpers.GetHexAddressFromBase64PK: %s", err.Error())
 		}
-
-		blockProposed, err := s.dao.GetProposedBlocksTotal(filters.BlocksProposed{Proposers: []string{key.Address().String()}})
+		blockProposed, err := s.dao.GetProposedBlocksTotal(filters.BlocksProposed{Proposers: []string{consAddress}})
 		if err != nil {
 			return nil, fmt.Errorf("dao.GetProposedBlocksTotal: %s", err.Error())
 		}
@@ -173,7 +173,7 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 			Website:         v.Description.Website,
 			OperatorAddress: v.OperatorAddress,
 			AccAddress:      address.String(),
-			ConsAddress:     key.Address().String(),
+			ConsAddress:     consAddress,
 		})
 	}
 
@@ -195,7 +195,7 @@ func (s *ServiceFacade) GetTopProposedBlocksValidators() (items []dmodels.Valida
 	}
 	mp := make(map[string]string)
 	for _, validator := range validators {
-		key, err := types.GetPubKeyFromBech32(types.Bech32PubKeyTypeConsPub, validator.ConsensusPubkey)
+		key, err := types.GetPubKeyFromBech32(types.Bech32PubKeyTypeConsPub, validator.ConsensusPubkey.Value)
 		if err != nil {
 			return nil, fmt.Errorf("types.GetPubKeyFromBech32: %s", err.Error())
 		}
