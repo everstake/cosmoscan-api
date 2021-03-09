@@ -71,6 +71,12 @@ type (
 			BondedTokens    decimal.Decimal `json:"bonded_tokens"`
 		} `json:"result"`
 	}
+	Supply struct {
+		Supply []struct {
+			Denom  string          `json:"denom"`
+			Amount decimal.Decimal `json:"amount"`
+		} `json:"supply"`
+	}
 	StakeResult struct {
 		Height uint64 `json:"height,string"`
 		Result []struct {
@@ -211,15 +217,15 @@ func (api API) GetInflation() (amount decimal.Decimal, err error) {
 }
 
 func (api API) GetTotalSupply() (amount decimal.Decimal, err error) {
-	var cp AmountResult
-	err = api.request("supply/total", &cp)
+	var s Supply
+	err = api.request("/cosmos/bank/v1beta1/supply", &s)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
-	if len(cp.Result) == 0 {
-		return amount, fmt.Errorf("invalid response")
+	if len(s.Supply) == 0 {
+		return amount, err
 	}
-	return cp.Amount(), nil
+	return s.Supply[0].Amount.Div(PrecisionDiv), nil
 }
 
 func (api API) GetStakingPool() (sp StakingPool, err error) {
