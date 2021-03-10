@@ -184,6 +184,7 @@ func (p *Parser) runFetcher() {
 				}
 			}
 
+			fail := false
 			pages := int(math.Ceil(float64(len(block.Block.Data.Txs)) / float64(batchTxs)))
 			for page := 1; page <= pages; page++ {
 				txs, err := p.api.GetTxs(TxsFilter{
@@ -194,7 +195,8 @@ func (p *Parser) runFetcher() {
 				if err != nil {
 					log.Error("Parser: fetcher: api.GetTxs: %s", err.Error())
 					<-time.After(time.Second)
-					continue
+					fail = true
+					break
 				}
 
 				for _, tx := range txs.Txs {
@@ -209,7 +211,8 @@ func (p *Parser) runFetcher() {
 					if tx.Hash == "" {
 						log.Error("Parser: fetcher: empty tx hash")
 						<-time.After(time.Second)
-						continue
+						fail = true
+						break
 					}
 
 					d.transactions = append(d.transactions, dmodels.Transaction{
@@ -252,11 +255,15 @@ func (p *Parser) runFetcher() {
 							if err != nil {
 								log.Error("%s, (height: %d): %s", msg.Type, tx.Height, err.Error())
 								<-time.After(time.Second)
-								continue
+								fail = true
+								break
 							}
 						}
 					}
 				}
+			}
+			if fail { // try again
+				continue
 			}
 
 			p.saverCh <- d
@@ -718,13 +725,29 @@ func (d *data) parseVoteMsg(index int, tx Tx, data []byte) (err error) {
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
+	var option string
+	switch m.Option {
+	case 0:
+		log.Debug("Tx[%s] vote msg has 0 type option", tx.Hash)
+		return nil
+	case 1:
+		option = "Yes"
+	case 2:
+		option = "No"
+	case 3:
+		option = "Abstain"
+	case 4:
+		option = "NoWithVeto"
+	default:
+		return fmt.Errorf("unknown type of option: %d", m.Option)
+	}
 	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
 	d.proposalVotes = append(d.proposalVotes, dmodels.ProposalVote{
 		ID:         id,
 		ProposalID: m.ProposalID,
 		Voter:      m.Voter,
 		TxHash:     tx.Hash,
-		Option:     m.Option,
+		Option:     option,
 		CreatedAt:  dmodels.NewTime(tx.Timestamp),
 	})
 	return nil

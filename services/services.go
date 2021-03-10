@@ -53,6 +53,7 @@ type (
 		GetValidatorDelegators(filter filters.ValidatorDelegators) (resp smodels.PaginatableResponse, err error)
 		GetAggBondedRatio(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggUnbondingVolume(filter filters.Agg) (items []smodels.AggItem, err error)
+		Test() (state dmodels.HistoricalState, err error)
 	}
 	CMC interface {
 		GetCurrencies() (currencies []cmc.Currency, err error)

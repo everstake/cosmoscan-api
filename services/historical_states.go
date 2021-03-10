@@ -47,6 +47,11 @@ func (s ServiceFacade) KeepHistoricalState() {
 	}
 }
 
+
+func (s ServiceFacade) Test() (state dmodels.HistoricalState, err error) {
+	return  s.makeState()
+}
+
 func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 	state.InflationRate, err = s.node.GetInflation()
 	if err != nil {
