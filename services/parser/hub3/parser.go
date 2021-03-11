@@ -733,9 +733,9 @@ func (d *data) parseVoteMsg(index int, tx Tx, data []byte) (err error) {
 	case 1:
 		option = "Yes"
 	case 2:
-		option = "No"
-	case 3:
 		option = "Abstain"
+	case 3:
+		option = "No"
 	case 4:
 		option = "NoWithVeto"
 	default:
