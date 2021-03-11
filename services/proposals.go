@@ -98,7 +98,7 @@ func (s *ServiceFacade) UpdateProposals() {
 		}
 
 		var yes, abstain, no, noWithVeto decimal.Decimal
-		if p.ProposalStatus == "VotingPeriod" {
+		if p.Status == node.VotingPeriodProposalStatus {
 			tally, err := s.node.ProposalTallyResult(p.ID)
 			if err != nil {
 				log.Error("UpdateProposals: node.ProposalTallyResult: %s", err.Error())
@@ -128,6 +128,20 @@ func (s *ServiceFacade) UpdateProposals() {
 			proposerAddress = a.OperatorAddress
 		}
 
+		var status string
+		switch p.Status {
+		case node.DepositPeriodProposalStatus:
+			status = "DepositPeriod"
+		case node.VotingPeriodProposalStatus:
+			status = "VotingPeriod"
+		case node.PassedProposalStatus:
+			status = "Passed"
+		case node.RejectedProposalStatus:
+			status = "Rejected"
+		case node.FailedProposalStatus:
+			status = "Failed"
+		}
+
 		proposal := dmodels.Proposal{
 			ID:                p.ID,
 			TxHash:            txHash,
@@ -136,7 +150,7 @@ func (s *ServiceFacade) UpdateProposals() {
 			ProposerAddress:   proposerAddress,
 			Title:             p.Content.Value.Title,
 			Description:       p.Content.Value.Description,
-			Status:            p.ProposalStatus,
+			Status:            status,
 			VotesYes:          yes,
 			VotesAbstain:      abstain,
 			VotesNo:           no,

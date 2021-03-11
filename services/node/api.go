@@ -10,7 +10,15 @@ import (
 	"time"
 )
 
-const precision = 6
+const (
+	precision = 6
+
+	DepositPeriodProposalStatus = 1
+	VotingPeriodProposalStatus  = 2
+	PassedProposalStatus        = 3
+	RejectedProposalStatus      = 4
+	FailedProposalStatus        = 5
+)
 
 var PrecisionDiv = decimal.New(1, precision)
 
@@ -106,7 +114,7 @@ type (
 				} `json:"value"`
 			} `json:"content"`
 			ID               uint64 `json:"id,string"`
-			ProposalStatus   string `json:"proposal_status"`
+			Status           int64  `json:"status"`
 			FinalTallyResult struct {
 				Yes        int64 `json:"yes,string"`
 				Abstain    int64 `json:"abstain,string"`
