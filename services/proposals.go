@@ -53,11 +53,12 @@ func (s *ServiceFacade) UpdateProposals() {
 	}
 
 	for _, p := range nodeProposals.Result {
-		votersTotal, err := s.dao.GetProposalVotesTotal(filters.ProposalVotes{ProposalID: []uint64{p.ID}})
+		votes, err := s.GetProposalVotes(filters.ProposalVotes{ProposalID: p.ID})
 		if err != nil {
-			log.Error("UpdateProposals: node.GetProposalVotesTotal: %s", err.Error())
+			log.Error("UpdateProposals: GetProposalVotes: %s", err.Error())
 			return
 		}
+		votersTotal := len(votes)
 		participationRate := decimal.Zero
 		if votersTotal != 0 {
 			participationRate = decimal.NewFromFloat(float64(votersTotal) / float64(totalAccounts) * 100).Truncate(2)
@@ -145,7 +146,7 @@ func (s *ServiceFacade) UpdateProposals() {
 			TotalDeposits:     totalDeposit.Div(node.PrecisionDiv),
 			VotingStartTime:   dmodels.NewTime(p.VotingStartTime),
 			VotingEndTime:     dmodels.NewTime(p.VotingEndTime),
-			Voters:            votersTotal,
+			Voters:            uint64(votersTotal),
 			ParticipationRate: participationRate,
 			Turnout:           turnout,
 			Activity:          activityJson,
@@ -185,24 +186,17 @@ func (s *ServiceFacade) GetProposalVotes(filter filters.ProposalVotes) (items []
 		accAddress := types.AccAddress(bench.Bytes())
 		validatorsMap[accAddress.String()] = validator
 	}
+	votesMap := make(map[string]dmodels.ProposalVote)
 	for _, vote := range votes {
+		votesMap[vote.Voter] = vote
+	}
+	for _, vote := range votesMap {
 		title := vote.Voter
 		var isValidator bool
 		validator, ok := validatorsMap[vote.Voter]
 		if ok {
 			title = validator.Description.Moniker
 			isValidator = ok
-		}
-		// ignore same voter
-		found := false
-		for _, item := range items {
-			if item.Voter == vote.Voter {
-				found = true
-				break
-			}
-		}
-		if found {
-			continue
 		}
 		items = append(items, smodels.ProposalVote{
 			Title:        title,
@@ -238,7 +232,7 @@ func (s *ServiceFacade) GetProposalsChartData() (items []smodels.ProposalChartDa
 	}
 
 	for _, p := range proposals {
-		votes, err := s.dao.GetProposalVotes(filters.ProposalVotes{ProposalID: []uint64{p.ID}})
+		votes, err := s.dao.GetProposalVotes(filters.ProposalVotes{ProposalID: p.ID})
 		if err != nil {
 			return nil, fmt.Errorf("dao.GetProposalVotes: %s", err.Error())
 		}

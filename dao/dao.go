@@ -61,8 +61,8 @@ type (
 		GetProposalDeposits(filter filters.ProposalDeposits) (deposits []dmodels.ProposalDeposit, err error)
 		CreateProposalVotes(votes []dmodels.ProposalVote) error
 		GetProposalVotes(filter filters.ProposalVotes) (votes []dmodels.ProposalVote, err error)
-		GetProposalVotesTotal(filter filters.ProposalVotes) (total uint64, err error)
 		GetAggProposalVotes(filter filters.Agg, id []uint64) (items []smodels.AggItem, err error)
+		GetTotalVotesByAddress(address string) (total uint64, err error)
 		CreateHistoricalStates(states []dmodels.HistoricalState) error
 		GetHistoricalStates(state filters.HistoricalState) (states []dmodels.HistoricalState, err error)
 		GetAggHistoricalStatesByField(filter filters.Agg, field string) (items []smodels.AggItem, err error)

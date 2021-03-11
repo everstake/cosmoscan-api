@@ -128,12 +128,9 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 		if err != nil {
 			return nil, fmt.Errorf("types.AccAddressFromHex: %s", err.Error())
 		}
-
-		totalVotes, err := s.dao.GetProposalVotesTotal(filters.ProposalVotes{
-			Voters: []string{address.String()},
-		})
+		totalVotes, err := s.dao.GetTotalVotesByAddress(address.String())
 		if err != nil {
-			return nil, fmt.Errorf("dao.GetProposalVotesTotal: %s", err.Error())
+			return nil, fmt.Errorf("dao.GetTotalVotesByAddress: %s", err.Error())
 		}
 
 		delegatorsTotal, err := s.dao.GetDelegatorsTotal(filters.Delegators{Validators: []string{v.OperatorAddress}})
@@ -195,11 +192,11 @@ func (s *ServiceFacade) GetTopProposedBlocksValidators() (items []dmodels.Valida
 	}
 	mp := make(map[string]string)
 	for _, validator := range validators {
-		key, err := types.GetPubKeyFromBech32(types.Bech32PubKeyTypeConsPub, validator.ConsensusPubkey.Value)
+		address, err := helpers.GetHexAddressFromBase64PK(validator.ConsensusPubkey.Value)
 		if err != nil {
-			return nil, fmt.Errorf("types.GetPubKeyFromBech32: %s", err.Error())
+			return nil, fmt.Errorf("helpers.GetHexAddressFromBase64PK: %s", err.Error())
 		}
-		mp[key.Address().String()] = validator.Description.Moniker
+		mp[address] = validator.Description.Moniker
 	}
 	for i, item := range items {
 		title, found := mp[item.Validator]

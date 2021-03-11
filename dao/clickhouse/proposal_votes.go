@@ -35,8 +35,8 @@ func (db DB) CreateProposalVotes(votes []dmodels.ProposalVote) error {
 }
 
 func (db DB) GetProposalVotes(filter filters.ProposalVotes) (votes []dmodels.ProposalVote, err error) {
-	q := squirrel.Select("*").From(dmodels.ProposalVotesTable)
-	if len(filter.ProposalID) != 0 {
+	q := squirrel.Select("*").From(dmodels.ProposalVotesTable).OrderBy("prv_created_at")
+	if filter.ProposalID != 0 {
 		q = q.Where(squirrel.Eq{"prv_proposal_id": filter.ProposalID})
 	}
 	if len(filter.Voters) != 0 {
@@ -52,18 +52,6 @@ func (db DB) GetProposalVotes(filter filters.ProposalVotes) (votes []dmodels.Pro
 	return votes, err
 }
 
-func (db DB) GetProposalVotesTotal(filter filters.ProposalVotes) (total uint64, err error) {
-	q := squirrel.Select("count(*) as total").From(dmodels.ProposalVotesTable)
-	if len(filter.ProposalID) != 0 {
-		q = q.Where(squirrel.Eq{"prv_proposal_id": filter.ProposalID})
-	}
-	if len(filter.Voters) != 0 {
-		q = q.Where(squirrel.Eq{"prv_voter": filter.Voters})
-	}
-	err = db.FindFirst(&total, q)
-	return total, err
-}
-
 func (db DB) GetAggProposalVotes(filter filters.Agg, id []uint64) (items []smodels.AggItem, err error) {
 	q := filter.BuildQuery("toDecimal64(count(*), 0)", "prv_created_at", dmodels.ProposalVotesTable)
 	if len(id) != 0 {
@@ -71,4 +59,12 @@ func (db DB) GetAggProposalVotes(filter filters.Agg, id []uint64) (items []smode
 	}
 	err = db.Find(&items, q)
 	return items, err
+}
+
+func (db DB) GetTotalVotesByAddress(address string) (total uint64, err error) {
+	q := squirrel.Select("count(distinct prv_proposal_id) as total").
+		From(dmodels.ProposalVotesTable).
+		Where(squirrel.Eq{"prv_voter": address})
+	err = db.FindFirst(&total, q)
+	return total, err
 }
