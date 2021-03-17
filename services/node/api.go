@@ -104,10 +104,8 @@ type (
 		Proposals []struct {
 			Content struct {
 				Type  string `json:"type"`
-				Value struct {
-					Title       string `json:"title"`
-					Description string `json:"description"`
-				} `json:"value"`
+				Title       string `json:"title"`
+				Description string `json:"description"`
 			} `json:"content"`
 			ProposalID       uint64 `json:"proposal_id,string"`
 			Status           string `json:"status"`
