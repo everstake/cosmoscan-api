@@ -11,17 +11,17 @@ import (
 )
 
 const (
-	SendMsg                        = "cosmos-sdk/MsgSend"
-	MultiSendMsg                   = "cosmos-sdk/MsgMultiSend"
-	DelegateMsg                    = "cosmos-sdk/MsgDelegate"
-	UndelegateMsg                  = "cosmos-sdk/MsgUndelegate"
-	BeginRedelegateMsg             = "cosmos-sdk/MsgBeginRedelegate"
-	WithdrawDelegationRewardMsg    = "cosmos-sdk/MsgWithdrawDelegationReward"
-	WithdrawValidatorCommissionMsg = "cosmos-sdk/MsgWithdrawValidatorCommission"
-	SubmitProposalMsg              = "cosmos-sdk/MsgSubmitProposal"
-	DepositMsg                     = "cosmos-sdk/MsgDeposit"
-	VoteMsg                        = "cosmos-sdk/MsgVote"
-	UnJailMsg                      = "cosmos-sdk/MsgUnjail"
+	SendMsg                        = "/cosmos.bank.v1beta1.MsgSend"
+	MultiSendMsg                   = "/cosmos.bank.v1beta1.MsgMultiSend"
+	DelegateMsg                    = "/cosmos.staking.v1beta1.MsgDelegate"
+	UndelegateMsg                  = "/cosmos.staking.v1beta1.MsgUndelegate"
+	BeginRedelegateMsg             = "/cosmos.staking.v1beta1.MsgBeginRedelegate"
+	WithdrawDelegationRewardMsg    = "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward"
+	WithdrawValidatorCommissionMsg = "/cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission"
+	SubmitProposalMsg              = "/cosmos.gov.v1beta1.MsgSubmitProposal"
+	DepositMsg                     = "/cosmos.gov.v1beta1.MsgDeposit"
+	VoteMsg                        = "/cosmos.gov.v1beta1.MsgVote"
+	UnJailMsg                      = "/cosmos.slashing.v1beta1.MsgUnjail"
 )
 
 type (
@@ -78,47 +78,52 @@ type (
 		} `json:"block"`
 	}
 
-	TxsBatch struct {
-		TotalCount int  `json:"total_count,string"`
-		Count      int  `json:"count,string"`
-		PageNumber int  `json:"page_number,string"`
-		PageTotal  int  `json:"page_total,string"`
-		Limit      int  `json:"limit,string"`
-		Txs        []Tx `json:"txs"`
+	Tx struct {
+		Tx struct {
+			Body struct {
+				Messages []json.RawMessage `json:"messages"`
+				Memo     string            `json:"memo"`
+			} `json:"body"`
+			AuthInfo struct {
+				Fee struct {
+					Amount   []Amount `json:"amount"`
+					GasLimit uint64   `json:"gas_limit,string"`
+					Payer    string   `json:"payer"`
+					Granter  string   `json:"granter"`
+				} `json:"fee"`
+				Signatures []string `json:"signatures"`
+			} `json:"auth_info"`
+		} `json:"tx"`
+		TxResponse struct {
+			Height uint64 `json:"height,string"`
+			Hash   string `json:"txhash"`
+			Data   string `json:"data"`
+			RawLog string `json:"raw_log"`
+			Code   int64  `json:"code"`
+			Logs   []struct {
+				Events []struct {
+					Type       string `json:"type"`
+					Attributes []struct {
+						Key   string `json:"key"`
+						Value string `json:"value"`
+					} `json:"attributes"`
+				} `json:"events"`
+			} `json:"logs"`
+			GasWanted uint64 `json:"gas_wanted,string"`
+			GasUsed   uint64 `json:"gas_used,string"`
+			Tx        struct {
+				Type string `json:"@type"`
+				Body struct {
+					Messages []json.RawMessage `json:"messages"`
+					Memo     string            `json:"memo"`
+				} `json:"body"`
+			} `json:"tx"`
+			Timestamp time.Time `json:"timestamp"`
+		} `json:"tx_response"`
 	}
 
-	Tx struct {
-		Height uint64 `json:"height,string"`
-		Hash   string `json:"txhash"`
-		Data   string `json:"data"`
-		RawLog string `json:"raw_log"`
-		Code   int64  `json:"code"`
-		Logs   []struct {
-			Events []struct {
-				Type       string `json:"type"`
-				Attributes []struct {
-					Key   string `json:"key"`
-					Value string `json:"value"`
-				} `json:"attributes"`
-			} `json:"events"`
-		} `json:"logs"`
-		GasWanted uint64 `json:"gas_wanted,string"`
-		GasUsed   uint64 `json:"gas_used,string"`
-		Tx        struct {
-			Type  string `json:"type"`
-			Value struct {
-				Msg []struct {
-					Type  string          `json:"type"`
-					Value json.RawMessage `json:"value"`
-				} `json:"msg"`
-				Fee struct {
-					Amount []Amount `json:"amount"`
-					Gas    uint64   `json:"gas,string"`
-				} `json:"fee"`
-				Memo string `json:"memo"`
-			} `json:"value"`
-		} `json:"tx"`
-		Timestamp time.Time `json:"timestamp"`
+	BaseMsg struct {
+		Type string `json:"@type"`
 	}
 	Amount struct {
 		Denom  string          `json:"denom"`
@@ -187,7 +192,7 @@ type (
 	MsgVote struct {
 		ProposalID uint64 `json:"proposal_id,string"`
 		Voter      string `json:"voter"`
-		Option     int    `json:"option"`
+		Option     string    `json:"option"`
 	}
 	MsgUnjail struct {
 		Address string `json:"address"`
@@ -202,12 +207,14 @@ type (
 	}
 
 	Validatorsets struct {
-		Result struct {
-			Validators []struct {
-				Address     string          `json:"address"`
-				VotingPower decimal.Decimal `json:"voting_power"`
-			} `json:"validators"`
-		} `json:"result"`
+		Validators []struct {
+			Address string `json:"address"`
+			PubKey  struct {
+				Type string `json:"@type"`
+				Key  string `json:"key"`
+			} `json:"pub_key"`
+			VotingPower decimal.Decimal `json:"voting_power"`
+		} `json:"validators"`
 	}
 )
 
@@ -231,25 +238,10 @@ func (api *API) GetLatestBlock() (block Block, err error) {
 	return block, err
 }
 
-func (api *API) GetTxs(filter TxsFilter) (txs TxsBatch, err error) {
-	params := make(map[string]string)
-	if filter.Limit != 0 {
-		params["limit"] = fmt.Sprintf("%d", filter.Limit)
-	}
-	if filter.Page != 0 {
-		params["page"] = fmt.Sprintf("%d", filter.Page)
-	}
-	if filter.MinHeight != 0 {
-		params["tx.minheight"] = fmt.Sprintf("%d", filter.MinHeight)
-	}
-	if filter.MaxHeight != 0 {
-		params["tx.maxheight"] = fmt.Sprintf("%d", filter.MaxHeight)
-	}
-	if filter.Height != 0 {
-		params["tx.height"] = fmt.Sprintf("%d", filter.Height)
-	}
-	err = api.get("txs", params, &txs)
-	return txs, err
+func (api *API) GetTx(hash string) (tx Tx, err error) {
+	endpoint := fmt.Sprintf("cosmos/tx/v1beta1/txs/%s", hash)
+	err = api.get(endpoint, nil, &tx)
+	return tx, err
 }
 
 func (api *API) get(endpoint string, params map[string]string, result interface{}) error {
@@ -267,7 +259,12 @@ func (api *API) get(endpoint string, params map[string]string, result interface{
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("bad status: %d", resp.StatusCode)
+		d, _ := ioutil.ReadAll(resp.Body)
+		text := string(d)
+		if len(text) > 150 {
+			text = text[:150]
+		}
+		return fmt.Errorf("bad status: %d, %s", resp.StatusCode, text)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -281,6 +278,6 @@ func (api *API) get(endpoint string, params map[string]string, result interface{
 }
 
 func (api *API) GetValidatorset(height uint64) (set Validatorsets, err error) {
-	err = api.get(fmt.Sprintf("validatorsets/%d", height), nil, &set)
+	err = api.get(fmt.Sprintf("cosmos/base/tendermint/v1beta1/validatorsets/%d", height), nil, &set)
 	return set, err
 }

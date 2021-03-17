@@ -3,17 +3,19 @@ package hub3
 import (
 	"context"
 	"crypto/sha1"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
+	"github.com/everstake/cosmoscan-api/services/helpers"
 	"github.com/shopspring/decimal"
-	"math"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/libs/bytes"
 	"sort"
 	"strconv"
 	"strings"
@@ -44,7 +46,7 @@ type (
 	api interface {
 		GetLatestBlock() (block Block, err error)
 		GetBlock(height uint64) (block Block, err error)
-		GetTxs(filter TxsFilter) (txs TxsBatch, err error)
+		GetTx(hash string) (txs Tx, err error)
 		GetValidatorset(height uint64) (set Validatorsets, err error)
 	}
 	data struct {
@@ -157,13 +159,13 @@ func (p *Parser) runFetcher() {
 
 			// find missed blocks
 			set := make(map[string]struct{})
-			for _, s := range validatorsSets.Result.Validators {
-				address, err := types.ConsAddressFromBech32(s.Address)
+			for _, s := range validatorsSets.Validators {
+				address, err := helpers.GetHexAddressFromBase64PK(s.PubKey.Key)
 				if err != nil {
-					log.Warn("Parser: types.ConsAddressFromBech32: %s", err.Error())
+					log.Warn("Parser: helpers.GetHexAddressFromBase64PK: %s", err.Error())
 					continue
 				}
-				set[strings.ToUpper(hex.EncodeToString(address.Bytes()))] = struct{}{}
+				set[address] = struct{}{}
 			}
 
 			precommits := make(map[string]struct{})
@@ -185,13 +187,12 @@ func (p *Parser) runFetcher() {
 			}
 
 			fail := false
-			pages := int(math.Ceil(float64(len(block.Block.Data.Txs)) / float64(batchTxs)))
-			for page := 1; page <= pages; page++ {
-				txs, err := p.api.GetTxs(TxsFilter{
-					Limit:  batchTxs,
-					Page:   uint64(page),
-					Height: height,
-				})
+			for _, txData := range block.Block.Data.Txs {
+				decodedTx, _ := base64.StdEncoding.DecodeString(txData)
+				sha256Hash := crypto.Sha256(decodedTx)
+				hash := bytes.HexBytes(sha256Hash)
+
+				tx, err := p.api.GetTx(hash.String())
 				if err != nil {
 					log.Error("Parser: fetcher: api.GetTxs: %s", err.Error())
 					<-time.After(time.Second)
@@ -199,65 +200,70 @@ func (p *Parser) runFetcher() {
 					break
 				}
 
-				for _, tx := range txs.Txs {
+				success := tx.TxResponse.Code == 0
 
-					success := tx.Code == 0
+				fee, err := calculateAmount(tx.Tx.AuthInfo.Fee.Amount)
+				if err != nil {
+					log.Warn("Parser: height: %d, calculateAmount: %s", tx.TxResponse.Height, err.Error())
+				}
 
-					fee, err := calculateAmount(tx.Tx.Value.Fee.Amount)
-					if err != nil {
-						log.Warn("Parser: height: %d, calculateAmount: %s", tx.Height, err.Error())
-					}
+				if tx.TxResponse.Hash == "" {
+					log.Error("Parser: fetcher: empty tx hash")
+					<-time.After(time.Second)
+					fail = true
+					break
+				}
 
-					if tx.Hash == "" {
-						log.Error("Parser: fetcher: empty tx hash")
-						<-time.After(time.Second)
-						fail = true
-						break
-					}
+				d.transactions = append(d.transactions, dmodels.Transaction{
+					Hash:      tx.TxResponse.Hash,
+					Status:    success,
+					Height:    tx.TxResponse.Height,
+					Messages:  uint64(len(tx.TxResponse.Tx.Body.Messages)),
+					Fee:       fee,
+					GasUsed:   tx.TxResponse.GasUsed,
+					GasWanted: tx.TxResponse.GasWanted,
+					CreatedAt: tx.TxResponse.Timestamp,
+				})
 
-					d.transactions = append(d.transactions, dmodels.Transaction{
-						Hash:      tx.Hash,
-						Status:    success,
-						Height:    tx.Height,
-						Messages:  uint64(len(tx.Tx.Value.Msg)),
-						Fee:       fee,
-						GasUsed:   tx.GasUsed,
-						GasWanted: tx.GasWanted,
-						CreatedAt: tx.Timestamp,
-					})
-
-					if success {
-						for i, msg := range tx.Tx.Value.Msg {
-							switch msg.Type {
-							case SendMsg:
-								err = d.parseMsgSend(i, tx, msg.Value)
-							case MultiSendMsg:
-								err = d.parseMultiSendMsg(i, tx, msg.Value)
-							case DelegateMsg:
-								err = d.parseDelegateMsg(i, tx, msg.Value)
-							case UndelegateMsg:
-								err = d.parseUndelegateMsg(i, tx, msg.Value)
-							case BeginRedelegateMsg:
-								err = d.parseBeginRedelegateMsg(i, tx, msg.Value)
-							case WithdrawDelegationRewardMsg:
-								err = d.parseWithdrawDelegationRewardMsg(i, tx, msg.Value)
-							case WithdrawValidatorCommissionMsg:
-								err = d.parseWithdrawValidatorCommissionMsg(i, tx, msg.Value)
-							case SubmitProposalMsg:
-								err = d.parseSubmitProposalMsg(i, tx, msg.Value)
-							case DepositMsg:
-								err = d.parseDepositMsg(i, tx, msg.Value)
-							case VoteMsg:
-								err = d.parseVoteMsg(i, tx, msg.Value)
-							case UnJailMsg:
-								err = d.parseUnjailMsg(i, tx, msg.Value)
-							}
-							if err != nil {
-								log.Error("%s, (height: %d): %s", msg.Type, tx.Height, err.Error())
-								<-time.After(time.Second)
-								fail = true
-								break
-							}
+				if success {
+					for i, msg := range tx.Tx.Body.Messages {
+						var baseMsg BaseMsg
+						err = json.Unmarshal(msg, &baseMsg)
+						if err != nil {
+							log.Error("Parser: BaseMsg: json.Unmarshal: %s", err.Error())
+							<-time.After(time.Second)
+							fail = true
+							break
+						}
+						switch baseMsg.Type {
+						case SendMsg:
+							err = d.parseMsgSend(i, tx, msg)
+						case MultiSendMsg:
+							err = d.parseMultiSendMsg(i, tx, msg)
+						case DelegateMsg:
+							err = d.parseDelegateMsg(i, tx, msg)
+						case UndelegateMsg:
+							err = d.parseUndelegateMsg(i, tx, msg)
+						case BeginRedelegateMsg:
+							err = d.parseBeginRedelegateMsg(i, tx, msg)
+						case WithdrawDelegationRewardMsg:
+							err = d.parseWithdrawDelegationRewardMsg(i, tx, msg)
+						case WithdrawValidatorCommissionMsg:
+							err = d.parseWithdrawValidatorCommissionMsg(i, tx, msg)
+						case SubmitProposalMsg:
+							err = d.parseSubmitProposalMsg(i, tx, msg)
+						case DepositMsg:
+							err = d.parseDepositMsg(i, tx, msg)
+						case VoteMsg:
+							err = d.parseVoteMsg(i, tx, msg)
+						case UnJailMsg:
+							err = d.parseUnjailMsg(i, tx, msg)
+						}
+						if err != nil {
+							log.Error("Parser: (height: %d): %s", tx.TxResponse.Height, err.Error())
+							<-time.After(time.Second)
+							fail = true
+							break
 						}
 					}
 				}
@@ -500,18 +506,18 @@ func (d *data) parseMsgSend(index int, tx Tx, data []byte) (err error) {
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
-	amount, err := calculateAmount(tx.Tx.Value.Fee.Amount)
+	amount, err := calculateAmount(m.Amount)
 	if err != nil {
 		return fmt.Errorf("calculateAmount: %s", err.Error())
 	}
-	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.transfers = append(d.transfers, dmodels.Transfer{
 		ID:        id,
-		TxHash:    tx.Hash,
+		TxHash:    tx.TxResponse.Hash,
 		From:      m.FromAddress,
 		To:        m.ToAddress,
 		Amount:    amount,
-		CreatedAt: tx.Timestamp,
+		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
 }
@@ -523,33 +529,33 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
 	for i, input := range m.Inputs {
-		id := makeHash(fmt.Sprintf("%s.%d.i.%d", tx.Hash, index, i))
+		id := makeHash(fmt.Sprintf("%s.%d.i.%d", tx.TxResponse.Hash, index, i))
 		amount, err := calculateAmount(input.Coins)
 		if err != nil {
 			return fmt.Errorf("calculateAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
-			TxHash:    tx.Hash,
+			TxHash:    tx.TxResponse.Hash,
 			From:      input.Address,
 			To:        "",
 			Amount:    amount,
-			CreatedAt: tx.Timestamp,
+			CreatedAt: tx.TxResponse.Timestamp,
 		})
 	}
 	for i, output := range m.Outputs {
-		id := makeHash(fmt.Sprintf("%s.%d.o.%d", tx.Hash, index, i))
+		id := makeHash(fmt.Sprintf("%s.%d.o.%d", tx.TxResponse.Hash, index, i))
 		amount, err := calculateAmount(output.Coins)
 		if err != nil {
 			return fmt.Errorf("calculateAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
-			TxHash:    tx.Hash,
+			TxHash:    tx.TxResponse.Hash,
 			From:      "",
 			To:        output.Address,
 			Amount:    amount,
-			CreatedAt: tx.Timestamp,
+			CreatedAt: tx.TxResponse.Timestamp,
 		})
 	}
 	return nil
@@ -565,14 +571,14 @@ func (d *data) parseDelegateMsg(index int, tx Tx, data []byte) (err error) {
 	if err != nil {
 		return fmt.Errorf("getAmount: %s", err.Error())
 	}
-	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.delegations = append(d.delegations, dmodels.Delegation{
 		ID:        id,
-		TxHash:    tx.Hash,
+		TxHash:    tx.TxResponse.Hash,
 		Delegator: m.DelegatorAddress,
 		Validator: m.ValidatorAddress,
 		Amount:    amount,
-		CreatedAt: tx.Timestamp,
+		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
 }
@@ -587,14 +593,14 @@ func (d *data) parseUndelegateMsg(index int, tx Tx, data []byte) (err error) {
 	if err != nil {
 		return fmt.Errorf("getAmount: %s", err.Error())
 	}
-	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.delegations = append(d.delegations, dmodels.Delegation{
 		ID:        id,
-		TxHash:    tx.Hash,
+		TxHash:    tx.TxResponse.Hash,
 		Delegator: m.DelegatorAddress,
 		Validator: m.ValidatorAddress,
 		Amount:    amount.Mul(decimal.NewFromFloat(-1)),
-		CreatedAt: tx.Timestamp,
+		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
 }
@@ -609,23 +615,23 @@ func (d *data) parseBeginRedelegateMsg(index int, tx Tx, data []byte) (err error
 	if err != nil {
 		return fmt.Errorf("getAmount: %s", err.Error())
 	}
-	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d.s", tx.TxResponse.Hash, index))
 	d.delegations = append(d.delegations, dmodels.Delegation{
 		ID:        id,
-		TxHash:    tx.Hash,
+		TxHash:    tx.TxResponse.Hash,
 		Delegator: m.DelegatorAddress,
 		Validator: m.ValidatorSrcAddress,
 		Amount:    amount.Mul(decimal.NewFromFloat(-1)),
-		CreatedAt: tx.Timestamp,
+		CreatedAt: tx.TxResponse.Timestamp,
 	})
-	id = makeHash(fmt.Sprintf("%s.%d.d", tx.Hash, index))
+	id = makeHash(fmt.Sprintf("%s.%d.d", tx.TxResponse.Hash, index))
 	d.delegations = append(d.delegations, dmodels.Delegation{
 		ID:        id,
-		TxHash:    tx.Hash,
+		TxHash:    tx.TxResponse.Hash,
 		Delegator: m.DelegatorAddress,
 		Validator: m.ValidatorDstAddress,
 		Amount:    amount,
-		CreatedAt: tx.Timestamp,
+		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
 }
@@ -638,7 +644,7 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 	}
 
 	mp := make(map[string]decimal.Decimal)
-	for _, log := range tx.Logs {
+	for _, log := range tx.TxResponse.Logs {
 		for _, event := range log.Events {
 			if event.Type == "withdraw_rewards" {
 				for i := 0; i < len(event.Attributes); i += 2 {
@@ -661,14 +667,14 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 		return fmt.Errorf("not found validator %s in map", m.ValidatorAddress)
 	}
 
-	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.delegatorRewards = append(d.delegatorRewards, dmodels.DelegatorReward{
 		ID:        id,
-		TxHash:    tx.Hash,
+		TxHash:    tx.TxResponse.Hash,
 		Delegator: m.DelegatorAddress,
 		Validator: m.ValidatorAddress,
 		Amount:    amount,
-		CreatedAt: tx.Timestamp,
+		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
 }
@@ -680,7 +686,7 @@ func (d *data) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error)
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
 	var id uint64
-	for _, log := range tx.Logs {
+	for _, log := range tx.TxResponse.Logs {
 		for _, event := range log.Events {
 			if event.Type == "submit_proposal" {
 				for _, att := range event.Attributes {
@@ -707,14 +713,14 @@ func (d *data) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error)
 	}
 	d.proposals = append(d.proposals, dmodels.HistoryProposal{
 		ID:          id,
-		TxHash:      tx.Hash,
+		TxHash:      tx.TxResponse.Hash,
 		Title:       m.Content.Value.Title,
 		Description: m.Content.Value.Description,
 		Recipient:   m.Content.Value.Recipient,
 		Amount:      amount,
 		InitDeposit: initDeposit,
 		Proposer:    m.Proposer,
-		CreatedAt:   tx.Timestamp,
+		CreatedAt:   tx.TxResponse.Timestamp,
 	})
 	return nil
 }
@@ -727,28 +733,25 @@ func (d *data) parseVoteMsg(index int, tx Tx, data []byte) (err error) {
 	}
 	var option string
 	switch m.Option {
-	case 0:
-		log.Debug("Tx[%s] vote msg has 0 type option", tx.Hash)
-		return nil
-	case 1:
+	case "VOTE_OPTION_YES":
 		option = "Yes"
-	case 2:
+	case "VOTE_OPTION_ABSTAIN":
 		option = "Abstain"
-	case 3:
+	case "VOTE_OPTION_NO":
 		option = "No"
-	case 4:
+	case "VOTE_OPTION_NO_WITH_VETO":
 		option = "NoWithVeto"
 	default:
 		return fmt.Errorf("unknown type of option: %d", m.Option)
 	}
-	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d.s", tx.TxResponse.Hash, index))
 	d.proposalVotes = append(d.proposalVotes, dmodels.ProposalVote{
 		ID:         id,
 		ProposalID: m.ProposalID,
 		Voter:      m.Voter,
-		TxHash:     tx.Hash,
+		TxHash:     tx.TxResponse.Hash,
 		Option:     option,
-		CreatedAt:  dmodels.NewTime(tx.Timestamp),
+		CreatedAt:  dmodels.NewTime(tx.TxResponse.Timestamp),
 	})
 	return nil
 }
@@ -768,13 +771,13 @@ func (d *data) parseDepositMsg(index int, tx Tx, data []byte) (err error) {
 		amount = amount.Add(amt)
 	}
 
-	id := makeHash(fmt.Sprintf("%s.%d.s", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d.s", tx.TxResponse.Hash, index))
 	d.proposalDeposits = append(d.proposalDeposits, dmodels.ProposalDeposit{
 		ID:         id,
 		ProposalID: m.ProposalID,
 		Depositor:  m.Depositor,
 		Amount:     amount,
-		CreatedAt:  dmodels.NewTime(tx.Timestamp),
+		CreatedAt:  dmodels.NewTime(tx.TxResponse.Timestamp),
 	})
 	return nil
 }
@@ -787,7 +790,7 @@ func (d *data) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte
 	}
 	var amount decimal.Decimal
 	found := false
-	for _, log := range tx.Logs {
+	for _, log := range tx.TxResponse.Logs {
 		for _, event := range log.Events {
 			if event.Type == "withdraw_commission" {
 				for _, att := range event.Attributes {
@@ -805,13 +808,13 @@ func (d *data) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte
 	if !found {
 		return fmt.Errorf("amount not found")
 	}
-	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.validatorRewards = append(d.validatorRewards, dmodels.ValidatorReward{
-		TxHash:    tx.Hash,
+		TxHash:    tx.TxResponse.Hash,
 		ID:        id,
 		Address:   m.ValidatorAddress,
 		Amount:    amount,
-		CreatedAt: tx.Timestamp,
+		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
 }
@@ -822,11 +825,11 @@ func (d *data) parseUnjailMsg(index int, tx Tx, data []byte) (err error) {
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
-	id := makeHash(fmt.Sprintf("%s.%d", tx.Hash, index))
+	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.jailers = append(d.jailers, dmodels.Jailer{
 		ID:        id,
 		Address:   m.Address,
-		CreatedAt: tx.Timestamp,
+		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
 }

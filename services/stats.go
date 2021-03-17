@@ -67,7 +67,7 @@ func (s *ServiceFacade) MakeStats() {
 				if err != nil {
 					return value, fmt.Errorf("node.GetStakingPool: %s", err.Error())
 				}
-				return stakingPool.Result.BondedTokens, nil
+				return stakingPool.Pool.BondedTokens, nil
 			},
 		},
 		{
@@ -241,10 +241,10 @@ func (s *ServiceFacade) MakeStats() {
 				sort.Slice(amounts, func(i, j int) bool {
 					return amounts[i].GreaterThan(amounts[j])
 				})
-				if sp.Result.BondedTokens.IsZero() {
+				if sp.Pool.BondedTokens.IsZero() {
 					return value, fmt.Errorf("total stake is zero")
 				}
-				stake := sp.Result.BondedTokens
+				stake := sp.Pool.BondedTokens
 				sum := decimal.Zero
 				limit := decimal.NewFromFloat(33.4)
 				for _, amount := range amounts {

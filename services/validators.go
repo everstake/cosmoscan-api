@@ -57,7 +57,7 @@ func (s *ServiceFacade) GetStakingPie() (pie smodels.Pie, err error) {
 	if err != nil {
 		return pie, fmt.Errorf("node.GetStakingPool: %s", err.Error())
 	}
-	pie.Total = stakingPool.Result.BondedTokens
+	pie.Total = stakingPool.Pool.BondedTokens
 	validatorsMap, err := s.GetValidatorMap()
 	if err != nil {
 		return pie, fmt.Errorf("s.GetValidatorMap: %s", err.Error())
@@ -111,7 +111,7 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 		return nil, fmt.Errorf("node.GetStakingPool: %s", err.Error())
 	}
 	for _, v := range nodeValidators {
-		consAddress, err := helpers.GetHexAddressFromBase64PK(v.ConsensusPubkey.Value)
+		consAddress, err := helpers.GetHexAddressFromBase64PK(v.ConsensusPubkey.Key)
 		if err != nil {
 			return nil, fmt.Errorf("helpers.GetHexAddressFromBase64PK: %s", err.Error())
 		}
@@ -153,8 +153,8 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 
 		power := v.DelegatorShares.Div(node.PrecisionDiv)
 		percentPower := decimal.Zero
-		if !stakingPool.Result.BondedTokens.IsZero() {
-			percentPower = power.Div(stakingPool.Result.BondedTokens).Mul(decimal.NewFromInt(100)).Truncate(2)
+		if !stakingPool.Pool.BondedTokens.IsZero() {
+			percentPower = power.Div(stakingPool.Pool.BondedTokens).Mul(decimal.NewFromInt(100)).Truncate(2)
 		}
 
 		validators = append(validators, smodels.Validator{
@@ -192,7 +192,7 @@ func (s *ServiceFacade) GetTopProposedBlocksValidators() (items []dmodels.Valida
 	}
 	mp := make(map[string]string)
 	for _, validator := range validators {
-		address, err := helpers.GetHexAddressFromBase64PK(validator.ConsensusPubkey.Value)
+		address, err := helpers.GetHexAddressFromBase64PK(validator.ConsensusPubkey.Key)
 		if err != nil {
 			return nil, fmt.Errorf("helpers.GetHexAddressFromBase64PK: %s", err.Error())
 		}

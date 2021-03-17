@@ -14,7 +14,6 @@ func GetHexAddressFromBase64PK(key string) (address string, err error) {
 	if len(decodedKey) != 32 {
 		return address, fmt.Errorf("wrong key format")
 	}
-	pub := ed25519.PubKeyEd25519{}
-	copy(pub[:], decodedKey)
+	pub := ed25519.PubKey(decodedKey)
 	return pub.Address().String(), nil
 }

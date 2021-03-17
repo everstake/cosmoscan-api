@@ -24,7 +24,7 @@ func (db DB) CreateHistoryProposals(proposals []dmodels.HistoryProposal) error {
 	)
 	for _, proposal := range proposals {
 		if proposal.ID == 0 {
-			return fmt.Errorf("field ID can not be 0")
+			return fmt.Errorf("field ProposalID can not be 0")
 		}
 		if proposal.CreatedAt.IsZero() {
 			return fmt.Errorf("field CreatedAt can not be zero")

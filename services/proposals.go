@@ -52,8 +52,8 @@ func (s *ServiceFacade) UpdateProposals() {
 		return
 	}
 
-	for _, p := range nodeProposals.Result {
-		votes, err := s.GetProposalVotes(filters.ProposalVotes{ProposalID: p.ID})
+	for _, p := range nodeProposals.Proposals {
+		votes, err := s.GetProposalVotes(filters.ProposalVotes{ProposalID: p.ProposalID})
 		if err != nil {
 			log.Error("UpdateProposals: GetProposalVotes: %s", err.Error())
 			return
@@ -64,19 +64,19 @@ func (s *ServiceFacade) UpdateProposals() {
 			participationRate = decimal.NewFromFloat(float64(votersTotal) / float64(totalAccounts) * 100).Truncate(2)
 		}
 
-		proposerAddress, err := s.node.GetProposalProposer(p.ID)
-		if err != nil {
-			log.Error("UpdateProposals: node.GetProposalProposer: %s", err.Error())
-			return
-		}
 		proposals, err := s.dao.GetProposals(filters.Proposals{
-			ID:    []uint64{p.ID},
+			ID:    []uint64{p.ProposalID},
 			Limit: 1,
 		})
 		if err != nil {
 			log.Error("UpdateProposals: dao.GetProposals: %s", err.Error())
 			return
 		}
+		var proposerAddress string
+		if len(proposals) > 0 {
+			proposerAddress = proposals[0].Proposer
+		}
+
 		totalDeposit := decimal.Zero
 		for _, value := range p.TotalDeposit {
 			totalDeposit = totalDeposit.Add(value.Amount)
@@ -84,10 +84,10 @@ func (s *ServiceFacade) UpdateProposals() {
 
 		activityItems, err := s.dao.GetAggProposalVotes(filters.Agg{
 			By: filters.AggByDay,
-		}, []uint64{p.ID})
+		}, []uint64{p.ProposalID})
 		activityJson, _ := json.Marshal(activityItems)
 
-		hps, err := s.dao.GetHistoryProposals(filters.HistoryProposals{ID: []uint64{p.ID}})
+		hps, err := s.dao.GetHistoryProposals(filters.HistoryProposals{ID: []uint64{p.ProposalID}})
 		if err != nil {
 			log.Error("UpdateProposals: dao.GetHistoryProposals: %s", err.Error())
 			return
@@ -99,15 +99,15 @@ func (s *ServiceFacade) UpdateProposals() {
 
 		var yes, abstain, no, noWithVeto decimal.Decimal
 		if p.Status == node.VotingPeriodProposalStatus {
-			tally, err := s.node.ProposalTallyResult(p.ID)
+			tally, err := s.node.ProposalTallyResult(p.ProposalID)
 			if err != nil {
 				log.Error("UpdateProposals: node.ProposalTallyResult: %s", err.Error())
 				return
 			}
-			yes = decimal.NewFromInt(tally.Result.Yes).Div(node.PrecisionDiv)
-			abstain = decimal.NewFromInt(tally.Result.Abstain).Div(node.PrecisionDiv)
-			no = decimal.NewFromInt(tally.Result.No).Div(node.PrecisionDiv)
-			noWithVeto = decimal.NewFromInt(tally.Result.NoWithVeto).Div(node.PrecisionDiv)
+			yes = decimal.NewFromInt(tally.Tally.Yes).Div(node.PrecisionDiv)
+			abstain = decimal.NewFromInt(tally.Tally.Abstain).Div(node.PrecisionDiv)
+			no = decimal.NewFromInt(tally.Tally.No).Div(node.PrecisionDiv)
+			noWithVeto = decimal.NewFromInt(tally.Tally.NoWithVeto).Div(node.PrecisionDiv)
 		} else {
 			yes = decimal.NewFromInt(p.FinalTallyResult.Yes).Div(node.PrecisionDiv)
 			abstain = decimal.NewFromInt(p.FinalTallyResult.Abstain).Div(node.PrecisionDiv)
@@ -116,8 +116,8 @@ func (s *ServiceFacade) UpdateProposals() {
 		}
 
 		turnout := decimal.Zero
-		if !totalStake.Result.BondedTokens.IsZero() {
-			turnout = yes.Add(abstain).Add(no).Add(noWithVeto).Div(totalStake.Result.BondedTokens)
+		if !totalStake.Pool.BondedTokens.IsZero() {
+			turnout = yes.Add(abstain).Add(no).Add(noWithVeto).Div(totalStake.Pool.BondedTokens)
 			turnout = turnout.Mul(decimal.NewFromFloat(100)).Truncate(2)
 		}
 
@@ -143,7 +143,7 @@ func (s *ServiceFacade) UpdateProposals() {
 		}
 
 		proposal := dmodels.Proposal{
-			ID:                p.ID,
+			ID:                p.ProposalID,
 			TxHash:            txHash,
 			Type:              p.Content.Type,
 			Proposer:          proposer,

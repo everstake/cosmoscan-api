@@ -13,11 +13,11 @@ import (
 const (
 	precision = 6
 
-	DepositPeriodProposalStatus = 1
-	VotingPeriodProposalStatus  = 2
-	PassedProposalStatus        = 3
-	RejectedProposalStatus      = 4
-	FailedProposalStatus        = 5
+	DepositPeriodProposalStatus = "PROPOSAL_STATUS_DEPOSIT_PERIOD"
+	VotingPeriodProposalStatus  = "PROPOSAL_STATUS_VOTING_PERIOD"
+	PassedProposalStatus        = "PROPOSAL_STATUS_PASSED"
+	RejectedProposalStatus      = "PROPOSAL_STATUS_REJECTED"
+	FailedProposalStatus        = "PROPOSAL_STATUS_FAILED"
 )
 
 var PrecisionDiv = decimal.New(1, precision)
@@ -28,20 +28,19 @@ type (
 		client *http.Client
 	}
 	CommunityPool struct {
-		Height uint64 `json:"height,string"`
-		Result []struct {
+		Pool []struct {
+			Denom  string          `json:"denom"`
 			Amount decimal.Decimal `json:"amount"`
-		} `json:"result"`
+		} `json:"pool"`
 	}
 	Validators struct {
-		Height uint64      `json:"height,string"`
-		Result []Validator `json:"result"`
+		Validators []Validator `json:"validators"`
 	}
 	Validator struct {
 		OperatorAddress string `json:"operator_address"`
 		ConsensusPubkey struct {
-			Type  string `json:"type"`
-			Value string `json:"value"`
+			Type string `json:"@type"`
+			Key  string `json:"key"`
 		} `json:"consensus_pubkey"`
 		Tokens          uint64          `json:"tokens,string"`
 		DelegatorShares decimal.Decimal `json:"delegator_shares"`
@@ -63,49 +62,46 @@ type (
 		MaxChangeRate decimal.Decimal `json:"max_change_rate"`
 	}
 	Inflation struct {
-		Height uint64          `json:"height,string"`
-		Result decimal.Decimal `json:"result"`
+		Inflation decimal.Decimal `json:"inflation"`
 	}
 	AmountResult struct {
-		Height uint64 `json:"height,string"`
-		Result []struct {
-			Amount decimal.Decimal `json:"amount"`
-		} `json:"result"`
-	}
-	StakingPool struct {
-		Height uint64 `json:"height,string"`
-		Result struct {
-			NotBondedTokens decimal.Decimal `json:"not_bonded_tokens"`
-			BondedTokens    decimal.Decimal `json:"bonded_tokens"`
-		} `json:"result"`
-	}
-	Supply struct {
-		Supply []struct {
+		Balances []struct {
 			Denom  string          `json:"denom"`
 			Amount decimal.Decimal `json:"amount"`
-		} `json:"supply"`
+		} `json:"balances"`
+	}
+	StakingPool struct {
+		Pool struct {
+			NotBondedTokens decimal.Decimal `json:"not_bonded_tokens"`
+			BondedTokens    decimal.Decimal `json:"bonded_tokens"`
+		} `json:"pool"`
+	}
+	Supply struct {
+		Amount struct {
+			Denom  string          `json:"denom"`
+			Amount decimal.Decimal `json:"amount"`
+		} `json:"amount"`
 	}
 	StakeResult struct {
-		Height uint64 `json:"height,string"`
-		Result []struct {
-			DelegatorAddress string          `json:"delegator_address"`
-			ValidatorAddress string          `json:"validator_address"`
-			Shares           decimal.Decimal `json:"shares"`
-		} `json:"result"`
+		DelegationResponses []struct {
+			Delegation struct {
+				DelegatorAddress string          `json:"delegator_address"`
+				ValidatorAddress string          `json:"validator_address"`
+				Shares           decimal.Decimal `json:"shares"`
+			} `json:"delegation"`
+		} `json:"delegation_responses"`
 	}
 	UnbondingResult struct {
-		Height uint64 `json:"height,string"`
-		Result []struct {
+		UnbondingResponses []struct {
 			DelegatorAddress string `json:"delegator_address"`
 			ValidatorAddress string `json:"validator_address"`
 			Entries          []struct {
 				Balance decimal.Decimal `json:"balance"`
 			} `json:"entries"`
-		} `json:"result"`
+		} `json:"unbonding_responses"`
 	}
 	ProposalsResult struct {
-		Height uint64 `json:"height,string"`
-		Result []struct {
+		Proposals []struct {
 			Content struct {
 				Type  string `json:"type"`
 				Value struct {
@@ -113,8 +109,8 @@ type (
 					Description string `json:"description"`
 				} `json:"value"`
 			} `json:"content"`
-			ID               uint64 `json:"id,string"`
-			Status           int64  `json:"status"`
+			ProposalID       uint64 `json:"proposal_id,string"`
+			Status           string `json:"status"`
 			FinalTallyResult struct {
 				Yes        int64 `json:"yes,string"`
 				Abstain    int64 `json:"abstain,string"`
@@ -128,25 +124,26 @@ type (
 			} `json:"total_deposit"`
 			VotingStartTime time.Time `json:"voting_start_time"`
 			VotingEndTime   time.Time `json:"voting_end_time"`
-		} `json:"result"`
+		} `json:"proposals"`
 	}
 	ProposalProposer struct {
-		Height uint64 `json:"height,string"`
-		Result struct {
+		Proposal struct {
 			ProposalID uint64 `json:"proposal_id,string"`
 			Proposer   string `json:"proposer"`
-		} `json:"result"`
+		} `json:"proposal"`
 	}
 	DelegatorValidatorStakeResult struct {
-		Height uint64 `json:"height,string"`
-		Result struct {
-			DelegatorAddress string          `json:"delegator_address"`
-			ValidatorAddress string          `json:"validator_address"`
-			Shares           decimal.Decimal `json:"shares"`
-			Balance          struct {
+		DelegationResponse struct {
+			Delegation struct {
+				DelegatorAddress string          `json:"delegator_address"`
+				ValidatorAddress string          `json:"validator_address"`
+				Shares           decimal.Decimal `json:"shares"`
+			} `json:"delegation"`
+			Balance struct {
+				Denom  string          `json:"denom"`
 				Amount decimal.Decimal `json:"amount"`
 			} `json:"balance"`
-		} `json:"result"`
+		} `json:"delegation_response"`
 	}
 	ProposalVotersResult struct {
 		Result []struct {
@@ -156,12 +153,12 @@ type (
 		} `json:"result"`
 	}
 	ProposalTallyResult struct {
-		Result struct {
+		Tally struct {
 			Yes        int64 `json:"yes,string"`
 			Abstain    int64 `json:"abstain,string"`
 			No         int64 `json:"no,string"`
 			NoWithVeto int64 `json:"no_with_veto,string"`
-		} `json:"result"`
+		} `json:"tally"`
 	}
 )
 
@@ -195,86 +192,89 @@ func (api API) request(endpoint string, data interface{}) error {
 
 func (api API) GetCommunityPoolAmount() (amount decimal.Decimal, err error) {
 	var cp CommunityPool
-	err = api.request("distribution/community_pool", &cp)
+	err = api.request("cosmos/distribution/v1beta1/community_pool", &cp)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
-	if len(cp.Result) == 0 {
-		return amount, fmt.Errorf("invalid response")
+	for _, p := range cp.Pool {
+		if p.Denom == "uatom" {
+			amount = amount.Add(p.Amount)
+		}
 	}
-	amount = cp.Result[0].Amount.Div(PrecisionDiv)
-	return amount, nil
+	return amount.Div(PrecisionDiv), nil
 }
 
 func (api API) GetValidators() (items []Validator, err error) {
 	var validators Validators
-	err = api.request("staking/validators", &validators)
+	err = api.request("cosmos/staking/v1beta1/validators?pagination.limit=10000", &validators)
 	if err != nil {
 		return nil, fmt.Errorf("request: %s", err.Error())
 	}
-	return validators.Result, nil
+	return validators.Validators, nil
 }
 
 func (api API) GetInflation() (amount decimal.Decimal, err error) {
 	var inflation Inflation
-	err = api.request("minting/inflation", &inflation)
+	err = api.request("cosmos/mint/v1beta1/inflation", &inflation)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
-	return inflation.Result.Mul(decimal.New(100, 0)), nil
+	return inflation.Inflation.Mul(decimal.New(100, 0)), nil
 }
 
 func (api API) GetTotalSupply() (amount decimal.Decimal, err error) {
 	var s Supply
-	err = api.request("/cosmos/bank/v1beta1/supply", &s)
+	err = api.request("cosmos/bank/v1beta1/supply/uatom", &s)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
-	if len(s.Supply) == 0 {
-		return amount, err
-	}
-	return s.Supply[0].Amount.Div(PrecisionDiv), nil
+	return s.Amount.Amount.Div(PrecisionDiv), nil
 }
 
 func (api API) GetStakingPool() (sp StakingPool, err error) {
-	err = api.request("staking/pool", &sp)
+	err = api.request("cosmos/staking/v1beta1/pool", &sp)
 	if err != nil {
 		return sp, fmt.Errorf("request: %s", err.Error())
 	}
-	sp.Result.BondedTokens = sp.Result.BondedTokens.Div(PrecisionDiv)
-	sp.Result.NotBondedTokens = sp.Result.NotBondedTokens.Div(PrecisionDiv)
+	sp.Pool.BondedTokens = sp.Pool.BondedTokens.Div(PrecisionDiv)
+	sp.Pool.NotBondedTokens = sp.Pool.NotBondedTokens.Div(PrecisionDiv)
 	return sp, nil
 }
 
 func (api API) GetBalance(address string) (amount decimal.Decimal, err error) {
 	var result AmountResult
-	err = api.request(fmt.Sprintf("/bank/balances/%s", address), &result)
+	err = api.request(fmt.Sprintf("cosmos/bank/v1beta1/balances/%s", address), &result)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
-	return result.Amount(), nil
+	for _, b := range result.Balances {
+		if b.Denom == "uatom" {
+			amount = amount.Add(b.Amount)
+		}
+	}
+	return amount.Div(PrecisionDiv), nil
 }
 
 func (api API) GetStake(address string) (amount decimal.Decimal, err error) {
 	var result StakeResult
-	err = api.request(fmt.Sprintf("/staking/delegators/%s/delegations", address), &result)
+	err = api.request(fmt.Sprintf("cosmos/staking/v1beta1/delegations/%s?pagination.limit=10000", address), &result)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	shares := decimal.Zero
-	for _, r := range result.Result {
-		shares = shares.Add(r.Shares)
+	for _, r := range result.DelegationResponses {
+		shares = shares.Add(r.Delegation.Shares)
 	}
 	return shares.Div(PrecisionDiv), nil
 }
 
 func (api API) GetUnbonding(address string) (amount decimal.Decimal, err error) {
 	var result UnbondingResult
-	err = api.request(fmt.Sprintf("/staking/delegators/%s/unbonding_delegations", address), &result)
+	err = api.request(fmt.Sprintf("cosmos/staking/v1beta1/delegators/%s/unbonding_delegations?pagination.limit=10000", address), &result)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
-	for _, r := range result.Result {
+	for _, r := range result.UnbondingResponses {
 		for _, entry := range r.Entries {
 			amount = amount.Add(entry.Balance)
 		}
@@ -284,50 +284,26 @@ func (api API) GetUnbonding(address string) (amount decimal.Decimal, err error) 
 }
 
 func (api API) GetProposals() (proposals ProposalsResult, err error) {
-	err = api.request("/gov/proposals", &proposals)
+	err = api.request("cosmos/gov/v1beta1/proposals?pagination.limit=10000", &proposals)
 	if err != nil {
 		return proposals, fmt.Errorf("request: %s", err.Error())
 	}
 	return proposals, nil
 }
 
-func (api API) GetProposalProposer(id uint64) (address string, err error) {
-	var result ProposalProposer
-	err = api.request(fmt.Sprintf("/gov/proposals/%d/proposer", id), &result)
-	if err != nil {
-		return address, fmt.Errorf("request: %s", err.Error())
-	}
-	return result.Result.Proposer, nil
-}
-
 func (api API) GetDelegatorValidatorStake(delegator string, validator string) (amount decimal.Decimal, err error) {
 	var result DelegatorValidatorStakeResult
-	err = api.request(fmt.Sprintf("/staking/delegators/%s/delegations/%s", delegator, validator), &result)
+	err = api.request(fmt.Sprintf("cosmos/staking/v1beta1/validators/%s/delegations/%s", validator, delegator), &result)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
-	return result.Result.Shares.Div(PrecisionDiv), nil
+	return result.DelegationResponse.Delegation.Shares.Div(PrecisionDiv), nil
 }
 
-func (api API) GetProposalVoters(id uint64) (result ProposalVotersResult, err error) {
-	err = api.request(fmt.Sprintf("/gov/proposals/%d/votes", id), &result)
-	if err != nil {
-		return result, fmt.Errorf("request: %s", err.Error())
-	}
-	return result, nil
-}
 func (api API) ProposalTallyResult(id uint64) (result ProposalTallyResult, err error) {
-	err = api.request(fmt.Sprintf("/gov/proposals/%d/tally", id), &result)
+	err = api.request(fmt.Sprintf("/cosmos/gov/v1beta1/proposals/%d/tally", id), &result)
 	if err != nil {
 		return result, fmt.Errorf("request: %s", err.Error())
 	}
 	return result, nil
-}
-
-func (r *AmountResult) Amount() decimal.Decimal {
-	s := decimal.Zero
-	for _, a := range r.Result {
-		s = s.Add(a.Amount)
-	}
-	return s.Div(PrecisionDiv)
 }

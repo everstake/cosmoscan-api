@@ -68,9 +68,7 @@ type (
 		GetStake(address string) (amount decimal.Decimal, err error)
 		GetUnbonding(address string) (amount decimal.Decimal, err error)
 		GetProposals() (proposals node.ProposalsResult, err error)
-		GetProposalProposer(id uint64) (proposer string, err error)
 		GetDelegatorValidatorStake(delegator string, validator string) (amount decimal.Decimal, err error)
-		GetProposalVoters(id uint64) (result node.ProposalVotersResult, err error)
 		ProposalTallyResult(id uint64) (result node.ProposalTallyResult, err error)
 	}
 

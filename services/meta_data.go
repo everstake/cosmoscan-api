@@ -42,9 +42,9 @@ func (s *ServiceFacade) GetMetaData() (meta smodels.MetaData, err error) {
 			meta.ValidatorAvgFee = avgFee.Div(decimal.New(int64(len(validators)), 0)).Mul(decimal.New(100, 0))
 		}
 		for _, validator := range validators {
-			consAddress, err := helpers.GetHexAddressFromBase64PK(validator.ConsensusPubkey.Value)
+			consAddress, err := helpers.GetHexAddressFromBase64PK(validator.ConsensusPubkey.Key)
 			if err != nil {
-				return meta, fmt.Errorf("helpers.GetHexAddressFromBase64PK(%s): %s", validator.ConsensusPubkey.Value, err.Error())
+				return meta, fmt.Errorf("helpers.GetHexAddressFromBase64PK(%s): %s", validator.ConsensusPubkey.Key, err.Error())
 			}
 			if consAddress == proposer {
 				meta.LatestValidator = validator.Description.Moniker

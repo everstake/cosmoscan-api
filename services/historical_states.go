@@ -72,7 +72,7 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 		return state, fmt.Errorf("node.GetStakingPool: %s", err.Error())
 	}
 	if !totalSupply.IsZero() {
-		state.StakedRatio = stakingPool.Result.BondedTokens.Div(totalSupply).Mul(decimal.New(100, 0)).Truncate(2)
+		state.StakedRatio = stakingPool.Pool.BondedTokens.Div(totalSupply).Mul(decimal.New(100, 0)).Truncate(2)
 	}
 	validators, err := s.node.GetValidators()
 	if err != nil {
@@ -87,8 +87,8 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 			top20Stake = top20Stake.Add(validators[i].DelegatorShares)
 		}
 		top20Stake = top20Stake.Div(node.PrecisionDiv)
-		if !stakingPool.Result.BondedTokens.IsZero() {
-			state.Top20Weight = top20Stake.Div(stakingPool.Result.BondedTokens).Mul(decimal.New(100, 0)).Truncate(2)
+		if !stakingPool.Pool.BondedTokens.IsZero() {
+			state.Top20Weight = top20Stake.Div(stakingPool.Pool.BondedTokens).Mul(decimal.New(100, 0)).Truncate(2)
 		}
 	}
 
