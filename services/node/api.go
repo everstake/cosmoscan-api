@@ -103,7 +103,7 @@ type (
 	ProposalsResult struct {
 		Proposals []struct {
 			Content struct {
-				Type  string `json:"type"`
+				Type        string `json:"@type"`
 				Title       string `json:"title"`
 				Description string `json:"description"`
 			} `json:"content"`

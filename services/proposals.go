@@ -10,6 +10,7 @@ import (
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
+	"strings"
 	"time"
 )
 
@@ -142,10 +143,16 @@ func (s *ServiceFacade) UpdateProposals() {
 			status = "Failed"
 		}
 
+		proposalType := p.Content.Type
+		proposalTypeParts := strings.Split(proposalType, ".")
+		if len(proposalTypeParts) > 0 {
+			proposalType = proposalTypeParts[len(proposalTypeParts)-1]
+		}
+
 		proposal := dmodels.Proposal{
 			ID:                p.ProposalID,
 			TxHash:            txHash,
-			Type:              p.Content.Type,
+			Type:              proposalType,
 			Proposer:          proposer,
 			ProposerAddress:   proposerAddress,
 			Title:             p.Content.Title,
