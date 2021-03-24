@@ -192,10 +192,10 @@ type (
 	MsgVote struct {
 		ProposalID uint64 `json:"proposal_id,string"`
 		Voter      string `json:"voter"`
-		Option     string    `json:"option"`
+		Option     string `json:"option"`
 	}
 	MsgUnjail struct {
-		Address string `json:"address"`
+		ValidatorAddr string `json:"validator_addr"`
 	}
 
 	TxsFilter struct {

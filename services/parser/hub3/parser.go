@@ -828,7 +828,7 @@ func (d *data) parseUnjailMsg(index int, tx Tx, data []byte) (err error) {
 	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.jailers = append(d.jailers, dmodels.Jailer{
 		ID:        id,
-		Address:   m.Address,
+		Address:   m.ValidatorAddr,
 		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
