@@ -6,6 +6,7 @@ import (
 )
 
 const TransfersTable = "transfers"
+const CosmosCurrency = "atom"
 
 type Transfer struct {
 	ID        string          `db:"trf_id"`
@@ -13,5 +14,6 @@ type Transfer struct {
 	From      string          `db:"trf_from"`
 	To        string          `db:"trf_to"`
 	Amount    decimal.Decimal `db:"trf_amount"`
+	Currency  string          `db:"trf_currency"`
 	CreatedAt time.Time       `db:"trf_created_at"`
 }

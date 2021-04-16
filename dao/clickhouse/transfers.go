@@ -13,7 +13,7 @@ func (db DB) CreateTransfers(transfers []dmodels.Transfer) error {
 	if len(transfers) == 0 {
 		return nil
 	}
-	q := squirrel.Insert(dmodels.TransfersTable).Columns("trf_id", "trf_tx_hash", "trf_from", "trf_to", "trf_amount", "trf_created_at")
+	q := squirrel.Insert(dmodels.TransfersTable).Columns("trf_id", "trf_tx_hash", "trf_from", "trf_to", "trf_amount", "trf_created_at", "trf_currency")
 	for _, transfer := range transfers {
 		if transfer.ID == "" {
 			return fmt.Errorf("field ProposalID can not be empty")
@@ -24,7 +24,7 @@ func (db DB) CreateTransfers(transfers []dmodels.Transfer) error {
 		if transfer.CreatedAt.IsZero() {
 			return fmt.Errorf("field CreatedAt can not be zero")
 		}
-		q = q.Values(transfer.ID, transfer.TxHash, transfer.From, transfer.To, transfer.Amount, transfer.CreatedAt)
+		q = q.Values(transfer.ID, transfer.TxHash, transfer.From, transfer.To, transfer.Amount, transfer.CreatedAt, transfer.Currency)
 	}
 	return db.Insert(q)
 }

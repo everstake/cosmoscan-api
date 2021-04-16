@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
@@ -202,9 +203,9 @@ func (p *Parser) runFetcher() {
 
 				success := tx.TxResponse.Code == 0
 
-				fee, err := calculateAmount(tx.Tx.AuthInfo.Fee.Amount)
+				fee, err := calculateAtomAmount(tx.Tx.AuthInfo.Fee.Amount)
 				if err != nil {
-					log.Warn("Parser: height: %d, calculateAmount: %s", tx.TxResponse.Height, err.Error())
+					log.Warn("Parser: height: %d, calculateAtomAmount: %s", tx.TxResponse.Height, err.Error())
 				}
 
 				if tx.TxResponse.Hash == "" {
@@ -506,9 +507,9 @@ func (d *data) parseMsgSend(index int, tx Tx, data []byte) (err error) {
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
-	amount, err := calculateAmount(m.Amount)
+	currency, amount, err := calculateAmount(m.Amount)
 	if err != nil {
-		return fmt.Errorf("calculateAmount: %s", err.Error())
+		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 	}
 	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.transfers = append(d.transfers, dmodels.Transfer{
@@ -517,6 +518,7 @@ func (d *data) parseMsgSend(index int, tx Tx, data []byte) (err error) {
 		From:      m.FromAddress,
 		To:        m.ToAddress,
 		Amount:    amount,
+		Currency:  currency,
 		CreatedAt: tx.TxResponse.Timestamp,
 	})
 	return nil
@@ -530,9 +532,9 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 	}
 	for i, input := range m.Inputs {
 		id := makeHash(fmt.Sprintf("%s.%d.i.%d", tx.TxResponse.Hash, index, i))
-		amount, err := calculateAmount(input.Coins)
+		currency, amount, err := calculateAmount(input.Coins)
 		if err != nil {
-			return fmt.Errorf("calculateAmount: %s", err.Error())
+			return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
@@ -540,14 +542,15 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 			From:      input.Address,
 			To:        "",
 			Amount:    amount,
+			Currency:  currency,
 			CreatedAt: tx.TxResponse.Timestamp,
 		})
 	}
 	for i, output := range m.Outputs {
 		id := makeHash(fmt.Sprintf("%s.%d.o.%d", tx.TxResponse.Hash, index, i))
-		amount, err := calculateAmount(output.Coins)
+		currency, amount, err := calculateAmount(output.Coins)
 		if err != nil {
-			return fmt.Errorf("calculateAmount: %s", err.Error())
+			return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
@@ -555,6 +558,7 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 			From:      "",
 			To:        output.Address,
 			Amount:    amount,
+			Currency:  currency,
 			CreatedAt: tx.TxResponse.Timestamp,
 		})
 	}
@@ -703,13 +707,13 @@ func (d *data) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error)
 	if id == 0 {
 		return fmt.Errorf("not found proposal_id")
 	}
-	amount, err := calculateAmount(m.Content.Value.Amount)
+	amount, err := calculateAtomAmount(m.Content.Value.Amount)
 	if err != nil {
-		return fmt.Errorf("calculateAmount: %s", err.Error())
+		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 	}
-	initDeposit, err := calculateAmount(m.InitialDeposit)
+	initDeposit, err := calculateAtomAmount(m.InitialDeposit)
 	if err != nil {
-		return fmt.Errorf("calculateAmount: %s", err.Error())
+		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 	}
 	d.proposals = append(d.proposals, dmodels.HistoryProposal{
 		ID:          id,
@@ -834,7 +838,7 @@ func (d *data) parseUnjailMsg(index int, tx Tx, data []byte) (err error) {
 	return nil
 }
 
-func calculateAmount(amountItems []Amount) (decimal.Decimal, error) {
+func calculateAtomAmount(amountItems []Amount) (decimal.Decimal, error) {
 	volume := decimal.Zero
 	for _, item := range amountItems {
 		if item.Denom == "" && item.Amount.IsZero() { // example height=1245781
@@ -847,6 +851,27 @@ func calculateAmount(amountItems []Amount) (decimal.Decimal, error) {
 	}
 	volume = volume.Div(precisionDiv)
 	return volume, nil
+}
+
+func calculateAmount(amountItems []Amount) (string, decimal.Decimal, error) {
+	volume := decimal.Zero
+	var lastCurrency string
+	for _, item := range amountItems {
+		if item.Denom == "" {
+			return lastCurrency, volume, errors.New("empty denom")
+		}
+		if lastCurrency == "" {
+			lastCurrency = item.Denom
+		} else if item.Denom != lastCurrency {
+			return lastCurrency, volume, fmt.Errorf("different currencies: %s, %s", lastCurrency, item.Denom)
+		}
+		volume = volume.Add(item.Amount)
+	}
+	if lastCurrency == "uatom" {
+		volume = volume.Div(precisionDiv)
+		lastCurrency = "atom"
+	}
+	return lastCurrency, volume, nil
 }
 
 func (a Amount) getAmount() (decimal.Decimal, error) {

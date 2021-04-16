@@ -139,7 +139,7 @@ func (p *Parser) parseGenesisState() error {
 		accountDelegation[delegation.Delegator] = accountDelegation[delegation.Delegator].Add(delegation.Amount)
 	}
 	for _, account := range state.AppState.Accounts {
-		amount, _ := calculateAmount(account.Coins)
+		amount, _ := calculateAtomAmount(account.Coins)
 		accounts = append(accounts, dmodels.Account{
 			Address:   account.Address,
 			Balance:   amount,
