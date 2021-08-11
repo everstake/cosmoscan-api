@@ -27,7 +27,6 @@ import (
 const repeatDelay = time.Second * 5
 const ParserTitle = "hub3"
 
-const batchTxs = 50
 const precision = 6
 
 var precisionDiv = decimal.New(1, precision)
@@ -203,9 +202,9 @@ func (p *Parser) runFetcher() {
 
 				success := tx.TxResponse.Code == 0
 
-				fee, err := calculateAtomAmount(tx.Tx.AuthInfo.Fee.Amount)
+				fee, err := calculateXprtAmount(tx.Tx.AuthInfo.Fee.Amount)
 				if err != nil {
-					log.Warn("Parser: height: %d, calculateAtomAmount: %s", tx.TxResponse.Height, err.Error())
+					log.Warn("Parser: height: %d, calculateXprtAmount: %s", tx.TxResponse.Height, err.Error())
 				}
 
 				if tx.TxResponse.Hash == "" {
@@ -252,7 +251,7 @@ func (p *Parser) runFetcher() {
 						case WithdrawValidatorCommissionMsg:
 							err = d.parseWithdrawValidatorCommissionMsg(i, tx, msg)
 						case SubmitProposalMsg:
-							err = d.parseSubmitProposalMsg(i, tx, msg)
+							err = d.parseSubmitProposalMsg(tx, msg)
 						case DepositMsg:
 							err = d.parseDepositMsg(i, tx, msg)
 						case VoteMsg:
@@ -509,7 +508,7 @@ func (d *data) parseMsgSend(index int, tx Tx, data []byte) (err error) {
 	}
 	currency, amount, err := calculateAmount(m.Amount)
 	if err != nil {
-		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+		return fmt.Errorf("calculateXprtAmount: %s", err.Error())
 	}
 	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.transfers = append(d.transfers, dmodels.Transfer{
@@ -534,7 +533,7 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 		id := makeHash(fmt.Sprintf("%s.%d.i.%d", tx.TxResponse.Hash, index, i))
 		currency, amount, err := calculateAmount(input.Coins)
 		if err != nil {
-			return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+			return fmt.Errorf("calculateXprtAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
@@ -550,7 +549,7 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 		id := makeHash(fmt.Sprintf("%s.%d.o.%d", tx.TxResponse.Hash, index, i))
 		currency, amount, err := calculateAmount(output.Coins)
 		if err != nil {
-			return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+			return fmt.Errorf("calculateXprtAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
@@ -648,8 +647,8 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 	}
 
 	mp := make(map[string]decimal.Decimal)
-	for _, log := range tx.TxResponse.Logs {
-		for _, event := range log.Events {
+	for _, Log := range tx.TxResponse.Logs {
+		for _, event := range Log.Events {
 			if event.Type == "withdraw_rewards" {
 				for i := 0; i < len(event.Attributes); i += 2 {
 					amount, err := strToAmount(event.Attributes[i].Value)
@@ -683,15 +682,15 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 	return nil
 }
 
-func (d *data) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error) {
+func (d *data) parseSubmitProposalMsg(tx Tx, data []byte) (err error) {
 	var m MsgSubmitProposal
 	err = json.Unmarshal(data, &m)
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
 	var id uint64
-	for _, log := range tx.TxResponse.Logs {
-		for _, event := range log.Events {
+	for _, Log := range tx.TxResponse.Logs {
+		for _, event := range Log.Events {
 			if event.Type == "submit_proposal" {
 				for _, att := range event.Attributes {
 					if att.Key == "proposal_id" {
@@ -707,13 +706,13 @@ func (d *data) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error)
 	if id == 0 {
 		return fmt.Errorf("not found proposal_id")
 	}
-	amount, err := calculateAtomAmount(m.Content.Value.Amount)
+	amount, err := calculateXprtAmount(m.Content.Value.Amount)
 	if err != nil {
-		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+		return fmt.Errorf("calculateXprtAmount: %s", err.Error())
 	}
-	initDeposit, err := calculateAtomAmount(m.InitialDeposit)
+	initDeposit, err := calculateXprtAmount(m.InitialDeposit)
 	if err != nil {
-		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+		return fmt.Errorf("calculateXprtAmount: %s", err.Error())
 	}
 	d.proposals = append(d.proposals, dmodels.HistoryProposal{
 		ID:          id,
@@ -794,8 +793,8 @@ func (d *data) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte
 	}
 	var amount decimal.Decimal
 	found := false
-	for _, log := range tx.TxResponse.Logs {
-		for _, event := range log.Events {
+	for _, Log := range tx.TxResponse.Logs {
+		for _, event := range Log.Events {
 			if event.Type == "withdraw_commission" {
 				for _, att := range event.Attributes {
 					if att.Key == "amount" {
@@ -838,13 +837,13 @@ func (d *data) parseUnjailMsg(index int, tx Tx, data []byte) (err error) {
 	return nil
 }
 
-func calculateAtomAmount(amountItems []Amount) (decimal.Decimal, error) {
+func calculateXprtAmount(amountItems []Amount) (decimal.Decimal, error) {
 	volume := decimal.Zero
 	for _, item := range amountItems {
 		if item.Denom == "" && item.Amount.IsZero() { // example height=1245781
 			break
 		}
-		if item.Denom != "uatom" {
+		if item.Denom != "uxprt" {
 			return volume, fmt.Errorf("unknown demon (currency): %s", item.Denom)
 		}
 		volume = volume.Add(item.Amount)
@@ -867,9 +866,9 @@ func calculateAmount(amountItems []Amount) (string, decimal.Decimal, error) {
 		}
 		volume = volume.Add(item.Amount)
 	}
-	if lastCurrency == "uatom" {
+	if lastCurrency == "uxprt" {
 		volume = volume.Div(precisionDiv)
-		lastCurrency = "atom"
+		lastCurrency = "xprt"
 	}
 	return lastCurrency, volume, nil
 }
@@ -878,7 +877,7 @@ func (a Amount) getAmount() (decimal.Decimal, error) {
 	if a.Denom == "" && a.Amount.IsZero() {
 		return decimal.Zero, nil
 	}
-	if a.Denom != "uatom" {
+	if a.Denom != "uxprt" {
 		return decimal.Zero, fmt.Errorf("unknown demon (currency): %s", a.Denom)
 	}
 	a.Amount = a.Amount.Div(precisionDiv)
@@ -889,7 +888,7 @@ func strToAmount(str string) (decimal.Decimal, error) {
 	if str == "" {
 		return decimal.Zero, nil
 	}
-	val := strings.TrimSuffix(str, "uatom")
+	val := strings.TrimSuffix(str, "uxprt")
 	amount, err := decimal.NewFromString(val)
 	if err != nil {
 		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())

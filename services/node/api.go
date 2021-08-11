@@ -195,7 +195,7 @@ func (api API) GetCommunityPoolAmount() (amount decimal.Decimal, err error) {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	for _, p := range cp.Pool {
-		if p.Denom == "uatom" {
+		if p.Denom == "uxprt" {
 			amount = amount.Add(p.Amount)
 		}
 	}
@@ -222,7 +222,7 @@ func (api API) GetInflation() (amount decimal.Decimal, err error) {
 
 func (api API) GetTotalSupply() (amount decimal.Decimal, err error) {
 	var s Supply
-	err = api.request("cosmos/bank/v1beta1/supply/uatom", &s)
+	err = api.request("/cosmos/bank/v1beta1/supply/uxprt", &s)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
@@ -246,7 +246,7 @@ func (api API) GetBalance(address string) (amount decimal.Decimal, err error) {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	for _, b := range result.Balances {
-		if b.Denom == "uatom" {
+		if b.Denom == "uxprt" {
 			amount = amount.Add(b.Amount)
 		}
 	}

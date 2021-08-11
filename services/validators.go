@@ -10,6 +10,7 @@ import (
 	"github.com/everstake/cosmoscan-api/services/helpers"
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
+	"github.com/persistenceOne/persistenceCore/application"
 	"github.com/shopspring/decimal"
 	"sort"
 	"time"
@@ -120,7 +121,7 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 			return nil, fmt.Errorf("dao.GetProposedBlocksTotal: %s", err.Error())
 		}
 
-		addressBytes, err := types.GetFromBech32(v.OperatorAddress, types.Bech32PrefixValAddr)
+		addressBytes, err := types.GetFromBech32(v.OperatorAddress, application.Bech32PrefixValAddr)
 		if err != nil {
 			return nil, fmt.Errorf("types.GetFromBech32: %s", err.Error())
 		}
