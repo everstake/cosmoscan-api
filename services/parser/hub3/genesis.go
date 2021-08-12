@@ -10,14 +10,18 @@ import (
 	"time"
 )
 
-const genesisJson = "https://raw.githubusercontent.com/cosmos/launch/master/genesis.json"
+const genesisJson = "https://rpc.core.persistence.one/genesis"
 const saveGenesisBatch = 100
 
 type Genesis struct {
 	AppState struct {
 		Accounts []struct {
-			Address string   `json:"address"`
-			Coins   []Amount `json:"coins"`
+			BaseVestingAccount struct {
+				BaseAccount struct {
+					Address string   `json:"address"`
+					Coins   []Amount `json:"original_vesting"`
+				}
+			}
 		} `json:"accounts"`
 		Distribution struct {
 			DelegatorStartingInfos []struct {
@@ -63,7 +67,16 @@ func GetGenesisState() (state Genesis, err error) {
 	if err != nil {
 		return state, fmt.Errorf("ioutil.ReadAll: %s", err.Error())
 	}
-	err = json.Unmarshal(data, &state)
+	g := struct {
+		Result struct {
+			Genesis *Genesis `json:"genesis"`
+		} `json:"result"`
+	}{
+		Result: struct {
+			Genesis *Genesis `json:"genesis"`
+		}(struct{ Genesis *Genesis }{Genesis: &state})}
+
+	err = json.Unmarshal(data, &g)
 	if err != nil {
 		return state, fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
@@ -114,11 +127,11 @@ func (p *Parser) parseGenesisState() error {
 		accountDelegation[delegation.Delegator] = accountDelegation[delegation.Delegator].Add(delegation.Amount)
 	}
 	for _, account := range state.AppState.Accounts {
-		amount, _ := calculateXprtAmount(account.Coins)
+		amount, _ := calculateXprtAmount(account.BaseVestingAccount.BaseAccount.Coins)
 		accounts = append(accounts, dmodels.Account{
-			Address:   account.Address,
+			Address:   account.BaseVestingAccount.BaseAccount.Address,
 			Balance:   amount,
-			Stake:     accountDelegation[account.Address],
+			Stake:     accountDelegation[account.BaseVestingAccount.BaseAccount.Address],
 			CreatedAt: t,
 		})
 	}

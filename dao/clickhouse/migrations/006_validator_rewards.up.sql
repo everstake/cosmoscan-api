@@ -2,7 +2,7 @@ create table validator_rewards
 (
     var_id         FixedString(40),
     var_tx_hash    FixedString(64),
-    var_address    FixedString(52),
+    var_address    FixedString(64),
     var_amount     Decimal128(18),
     var_created_at DateTime
 ) ENGINE ReplacingMergeTree()

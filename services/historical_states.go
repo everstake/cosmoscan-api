@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
@@ -10,7 +9,6 @@ import (
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
 	"sort"
-	"strings"
 	"time"
 )
 
@@ -47,9 +45,8 @@ func (s ServiceFacade) KeepHistoricalState() {
 	}
 }
 
-
 func (s ServiceFacade) Test() (state dmodels.HistoricalState, err error) {
-	return  s.makeState()
+	return s.makeState()
 }
 
 func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
@@ -94,22 +91,12 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 
 	state.CirculatingSupply = totalSupply.Truncate(2)
 
-	currencies, err := s.cmc.GetCurrencies()
+	state.Price, state.TradingVolume, err = s.cm.GetMarketData()
 	if err != nil {
-		return state, fmt.Errorf("cmc.GetCurrencies: %s", err.Error())
+		return state, fmt.Errorf("cmc.GetMarketData: %s", err.Error())
 	}
-	for _, currency := range currencies {
-		if strings.ToLower(currency.Symbol) == config.Currency {
-			quote, ok := currency.Quote["USD"]
-			if !ok {
-				return state, fmt.Errorf("not found USD quote")
-			}
-			state.Price = quote.Price.Truncate(8)
-			state.MarketCap = state.CirculatingSupply.Mul(state.Price).Truncate(2)
-			state.TradingVolume = quote.Volume24h.Truncate(2)
-			break
-		}
-	}
+	state.MarketCap = state.CirculatingSupply.Mul(state.Price).Truncate(2)
+
 	if state.Price.IsZero() {
 		return state, fmt.Errorf("cmc not found currency")
 	}

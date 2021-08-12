@@ -91,7 +91,7 @@ func (p *Parser) Run() error {
 	if model.Height == 0 {
 		err = p.parseGenesisState()
 		if err != nil {
-			return fmt.Errorf("parseGenesisState: %s", err.Error())
+			return fmt.Errorf("parseGenesisState: %w", err)
 		}
 		p.setAccounts()
 	}

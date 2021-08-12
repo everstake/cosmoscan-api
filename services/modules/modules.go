@@ -32,7 +32,7 @@ func NewGroup(module ...Module) *Group {
 }
 
 func (g *Group) Run() {
-	errors := make(chan errResp, len(g.modules))
+	Errors := make(chan errResp, len(g.modules))
 	for _, m := range g.modules {
 		go func(m Module) {
 			err := m.Run()
@@ -40,13 +40,13 @@ func (g *Group) Run() {
 				err:    err,
 				module: m.Title(),
 			}
-			errors <- errResp
+			Errors <- errResp
 		}(m)
 	}
 	// handle errors
 	go func() {
 		for {
-			err := <-errors
+			err := <-Errors
 			if err.err != nil {
 				log.Error("Module [%s] return error: %s", err.module, err.err)
 				g.Stop()

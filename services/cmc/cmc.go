@@ -7,6 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 const apiURL = "https://pro-api.coinmarketcap.com"
@@ -69,11 +70,24 @@ func (cmc *CMC) request(endpoint string, data interface{}) error {
 	return nil
 }
 
-func (cmc *CMC) GetCurrencies() (currencies []Currency, err error) {
+func (cmc *CMC) GetMarketData() (price, volume24h decimal.Decimal, err error) {
 	var currencyResp CurrenciesResponse
 	err = cmc.request("/v1/cryptocurrency/listings/latest", &currencyResp)
 	if currencyResp.Status.ErrorCode != 0 {
-		return nil, fmt.Errorf("error code: %d, msg: %s", currencyResp.Status.ErrorCode, currencyResp.Status.ErrorMessage)
+		return price, volume24h, fmt.Errorf("error code: %d, msg: %s", currencyResp.Status.ErrorCode, currencyResp.Status.ErrorMessage)
 	}
-	return currencyResp.Data, err
+
+	for _, currency := range currencyResp.Data {
+		if strings.ToLower(currency.Symbol) == config.Currency {
+			quote, ok := currency.Quote["USD"]
+			if !ok {
+				return price, volume24h, fmt.Errorf("not found USD quote")
+			}
+			price = quote.Price.Truncate(8)
+			volume24h = quote.Volume24h.Truncate(2)
+			break
+		}
+	}
+
+	return price, volume24h, err
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dao"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
-	"github.com/everstake/cosmoscan-api/services/cmc"
+	"github.com/everstake/cosmoscan-api/services/coingecko"
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
@@ -55,8 +55,8 @@ type (
 		GetAggUnbondingVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		Test() (state dmodels.HistoricalState, err error)
 	}
-	CMC interface {
-		GetCurrencies() (currencies []cmc.Currency, err error)
+	CryptoMarket interface {
+		GetMarketData() (price, volume24h decimal.Decimal, err error)
 	}
 	Node interface {
 		GetCommunityPoolAmount() (amount decimal.Decimal, err error)
@@ -75,7 +75,7 @@ type (
 	ServiceFacade struct {
 		dao  dao.DAO
 		cfg  config.Config
-		cmc  CMC
+		cm   CryptoMarket
 		node Node
 	}
 )
@@ -84,7 +84,7 @@ func NewServices(d dao.DAO, cfg config.Config) (svc Services, err error) {
 	return &ServiceFacade{
 		dao:  d,
 		cfg:  cfg,
-		cmc:  cmc.NewCMC(cfg),
+		cm:   coingecko.NewGecko(),
 		node: node.NewAPI(cfg),
 	}, nil
 }
