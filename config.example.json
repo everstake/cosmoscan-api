@@ -21,7 +21,7 @@
     "database": "cosmoshub3"
   },
   "parser": {
-    "node": "https://api.cosmos.network",
+    "node": "https://rest.core.persistence.one",
     "batch": 500,
     "fetchers": 5
   },
