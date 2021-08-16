@@ -48,7 +48,7 @@ func (g *Group) Run() {
 		for {
 			err := <-Errors
 			if err.err != nil {
-				log.Error("Module [%s] return error: %s", err.module, err.err)
+				log.Error("Module [%s] return error: %+v\n", err.module, err.err)
 				g.Stop()
 				os.Exit(0)
 			}
