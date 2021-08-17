@@ -2,7 +2,7 @@ create table delegations
 (
     dlg_id         FixedString(40),
     dlg_tx_hash    FixedString(64),
-    dlg_delegator  FixedString(64),
+    dlg_delegator  FixedString(50),
     dlg_validator  FixedString(57),
     dlg_amount     Decimal128(18),
     dlg_created_at DateTime
