@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/hex"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/everstake/cosmoscan-api/dao/filters"
@@ -125,11 +124,13 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 		if err != nil {
 			return nil, fmt.Errorf("types.GetFromBech32: %s", err.Error())
 		}
-		address, err := types.AccAddressFromHex(hex.EncodeToString(addressBytes))
+
+		address, err := types.Bech32ifyAddressBytes(application.Bech32MainPrefix, addressBytes)
 		if err != nil {
-			return nil, fmt.Errorf("types.AccAddressFromHex: %s", err.Error())
+			return nil, fmt.Errorf("types.Bech32ifyAddressBytes: %s", err.Error())
 		}
-		totalVotes, err := s.dao.GetTotalVotesByAddress(address.String())
+
+		totalVotes, err := s.dao.GetTotalVotesByAddress(address)
 		if err != nil {
 			return nil, fmt.Errorf("dao.GetTotalVotesByAddress: %s", err.Error())
 		}
@@ -147,7 +148,7 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 			Validators: []string{v.OperatorAddress},
 		})
 
-		selfStake, err := s.node.GetDelegatorValidatorStake(address.String(), v.OperatorAddress)
+		selfStake, err := s.node.GetDelegatorValidatorStake(address, v.OperatorAddress)
 		if err != nil {
 			return nil, fmt.Errorf("node.GetDelegatorValidatorStake: %s", err.Error())
 		}
@@ -170,10 +171,14 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 			GovernanceVotes: totalVotes,
 			Website:         v.Description.Website,
 			OperatorAddress: v.OperatorAddress,
-			AccAddress:      address.String(),
+			AccAddress:      address,
 			ConsAddress:     consAddress,
 		})
 	}
+
+	sort.Slice(validators, func(i, j int) bool {
+		return validators[i].Power.Cmp(validators[j].Power) == 1
+	})
 
 	return validators, nil
 }
@@ -326,15 +331,15 @@ func (s *ServiceFacade) GetValidatorBalance(valAddress string) (balance smodels.
 	}
 	balance.SelfDelegated = validator.SelfStake
 	balance.OtherDelegated = validator.Power.Sub(validator.SelfStake)
-	addressBytes, err := types.GetFromBech32(valAddress, types.Bech32PrefixValAddr)
+	addressBytes, err := types.GetFromBech32(valAddress, application.Bech32PrefixValAddr)
 	if err != nil {
 		return balance, fmt.Errorf("types.GetFromBech32: %s", err.Error())
 	}
-	address, err := types.AccAddressFromHex(hex.EncodeToString(addressBytes))
+	address, err := types.Bech32ifyAddressBytes(application.Bech32MainPrefix, addressBytes)
 	if err != nil {
-		return balance, fmt.Errorf("types.AccAddressFromHex: %s", err.Error())
+		return balance, fmt.Errorf("types.Bech32ifyAddressBytes: %s", err.Error())
 	}
-	balance.Available, err = s.node.GetBalance(address.String())
+	balance.Available, err = s.node.GetBalance(address)
 	if err != nil {
 		return balance, fmt.Errorf("node.GetBalance: %s", err.Error())
 	}
