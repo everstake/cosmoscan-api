@@ -52,7 +52,7 @@ func (s *ServiceFacade) GetValidatorDelegationsAgg(validatorAddress string) (ite
 	if err != nil {
 		return nil, fmt.Errorf("GetValidator: %s", err.Error())
 	}
-	items, err = s.dao.GetAggDelegationsVolume(filters.DelegationsAgg{
+	items, err = s.dao.GetAggDelegationsAndUndelegationsVolume(filters.DelegationsAgg{
 		Agg: filters.Agg{
 			By:   filters.AggByDay,
 			From: dmodels.NewTime(time.Now().Add(-time.Hour * 24 * 30)),

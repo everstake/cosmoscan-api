@@ -45,6 +45,15 @@ func (db DB) GetAggDelegationsVolume(filter filters.DelegationsAgg) (items []smo
 	return items, err
 }
 
+func (db DB) GetAggDelegationsAndUndelegationsVolume(filter filters.DelegationsAgg) (items []smodels.AggItem, err error) {
+	q := filter.BuildQuery("sum(dlg_amount)", "dlg_created_at", dmodels.DelegationsTable)
+	if len(filter.Validators) != 0 {
+		q = q.Where(squirrel.Eq{"dlg_validator": filter.Validators})
+	}
+	err = db.Find(&items, q)
+	return items, err
+}
+
 func (db DB) GetAggUndelegationsVolume(filter filters.Agg) (items []smodels.AggItem, err error) {
 	q := filter.BuildQuery("sum(abs(dlg_amount))", "dlg_created_at", dmodels.DelegationsTable)
 	q = q.Where(squirrel.Lt{"dlg_amount": 0})
