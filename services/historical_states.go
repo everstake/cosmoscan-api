@@ -8,6 +8,8 @@ import (
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
+	"io/ioutil"
+	"net/http"
 	"sort"
 	"time"
 )
@@ -89,7 +91,10 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 		}
 	}
 
-	state.CirculatingSupply = totalSupply.Truncate(2)
+	state.CirculatingSupply, err = getCirculationSupply()
+	if err != nil {
+		log.Error("makeState: getCirculationSupply: %s", err.Error())
+	}
 
 	state.Price, state.TradingVolume, err = s.cm.GetMarketData()
 	if err != nil {
@@ -135,4 +140,21 @@ func (s *ServiceFacade) GetHistoricalState() (state smodels.HistoricalState, err
 		return state, fmt.Errorf("dao.GetAggHistoricalStatesByField: %s", err.Error())
 	}
 	return state, nil
+}
+
+func getCirculationSupply() (amount decimal.Decimal, err error) {
+	resp, err := http.Get("https://pdfodddic9.execute-api.ap-southeast-1.amazonaws.com/default/circulatingSupply")
+	if err != nil {
+		return amount, fmt.Errorf("http.Get: %s", err.Error())
+	}
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return amount, fmt.Errorf("ioutil.ReadAll: %s", err.Error())
+	}
+	amount, err = decimal.NewFromString(string(data))
+	if err != nil {
+		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())
+	}
+	return amount, nil
 }
