@@ -18,6 +18,8 @@ const (
 	PassedProposalStatus        = "PROPOSAL_STATUS_PASSED"
 	RejectedProposalStatus      = "PROPOSAL_STATUS_REJECTED"
 	FailedProposalStatus        = "PROPOSAL_STATUS_FAILED"
+
+	MainUnit = "uatom"
 )
 
 var PrecisionDiv = decimal.New(1, precision)
@@ -157,6 +159,206 @@ type (
 			No         int64 `json:"no,string"`
 			NoWithVeto int64 `json:"no_with_veto,string"`
 		} `json:"tally"`
+	}
+	Block struct {
+		BlockID struct {
+			Hash          string `json:"hash"`
+			PartSetHeader struct {
+				Total int    `json:"total"`
+				Hash  string `json:"hash"`
+			} `json:"part_set_header"`
+		} `json:"block_id"`
+		Block struct {
+			Header struct {
+				Version struct {
+					Block string `json:"block"`
+					App   string `json:"app"`
+				} `json:"version"`
+				ChainID     string    `json:"chain_id"`
+				Height      uint64    `json:"height,string"`
+				Time        time.Time `json:"time"`
+				LastBlockID struct {
+					Hash          string `json:"hash"`
+					PartSetHeader struct {
+						Total int    `json:"total"`
+						Hash  string `json:"hash"`
+					} `json:"part_set_header"`
+				} `json:"last_block_id"`
+				LastCommitHash     string `json:"last_commit_hash"`
+				DataHash           string `json:"data_hash"`
+				ValidatorsHash     string `json:"validators_hash"`
+				NextValidatorsHash string `json:"next_validators_hash"`
+				ConsensusHash      string `json:"consensus_hash"`
+				AppHash            string `json:"app_hash"`
+				LastResultsHash    string `json:"last_results_hash"`
+				EvidenceHash       string `json:"evidence_hash"`
+				ProposerAddress    string `json:"proposer_address"`
+			} `json:"header"`
+			Data struct {
+				Txs []string `json:"txs"`
+			} `json:"data"`
+		} `json:"block"`
+	}
+	//Block struct {
+	//	BlockMeta struct {
+	//		Header struct {
+	//			ChainID     string    `json:"chain_id"`
+	//			Height      uint64    `json:"height"`
+	//			Time        time.Time `json:"time"`
+	//			NumTxs      uint64    `json:"num_txs"`
+	//			LastBlockID struct {
+	//				Hash  string `json:"hash"`
+	//				Parts struct {
+	//					Total uint64 `json:"total"`
+	//					Hash  string `json:"hash"`
+	//				} `json:"parts"`
+	//			} `json:"last_block_id"`
+	//			TotalTxs           uint64 `json:"total_txs"`
+	//			LastCommitHash     string `json:"last_commit_hash"`
+	//			DataHash           string `json:"data_hash"`
+	//			ValidatorsHash     string `json:"validators_hash"`
+	//			NextValidatorsHash string `json:"next_validators_hash"`
+	//			ConsensusHash      string `json:"consensus_hash"`
+	//			AppHash            string `json:"app_hash"`
+	//			LastResultsHash    string `json:"last_results_hash"`
+	//			EvidenceHash       string `json:"evidence_hash"`
+	//			ProposerAddress    string `json:"proposer_address"`
+	//		} `json:"header"`
+	//		BlockID struct {
+	//			Hash  string `json:"hash"`
+	//			Parts struct {
+	//				Total int    `json:"total"`
+	//				Hash  string `json:"hash"`
+	//			} `json:"parts"`
+	//		} `json:"block_id"`
+	//	} `json:"block_meta"`
+	//	Block struct {
+	//		Header struct {
+	//			ChainID     string    `json:"chain_id"`
+	//			Height      uint64    `json:"height,string"`
+	//			Time        time.Time `json:"time"`
+	//			NumTxs      int       `json:"num_txs"`
+	//			LastBlockID struct {
+	//				Hash  string `json:"hash"`
+	//				Parts struct {
+	//					Total int    `json:"total"`
+	//					Hash  string `json:"hash"`
+	//				} `json:"parts"`
+	//			} `json:"last_block_id"`
+	//			TotalTxs           int    `json:"total_txs"`
+	//			LastCommitHash     string `json:"last_commit_hash"`
+	//			DataHash           string `json:"data_hash"`
+	//			ValidatorsHash     string `json:"validators_hash"`
+	//			NextValidatorsHash string `json:"next_validators_hash"`
+	//			ConsensusHash      string `json:"consensus_hash"`
+	//			AppHash            string `json:"app_hash"`
+	//			LastResultsHash    string `json:"last_results_hash"`
+	//			EvidenceHash       string `json:"evidence_hash"`
+	//			ProposerAddress    string `json:"proposer_address"`
+	//		} `json:"header"`
+	//		Txs        []string `json:"txs"`
+	//		LastCommit struct {
+	//			BlockID struct {
+	//				Hash  string `json:"hash"`
+	//				Parts struct {
+	//					Total int    `json:"total"`
+	//					Hash  string `json:"hash"`
+	//				} `json:"parts"`
+	//			} `json:"block_id"`
+	//			Precommits []struct {
+	//				ValidatorAddress string    `json:"validator_address"`
+	//				ValidatorIndex   string    `json:"validator_index"`
+	//				Height           string    `json:"height"`
+	//				Round            string    `json:"round"`
+	//				Timestamp        time.Time `json:"timestamp"`
+	//				Type             int       `json:"type"`
+	//				BlockID          struct {
+	//					Hash  string `json:"hash"`
+	//					Parts struct {
+	//						Total int    `json:"total"`
+	//						Hash  string `json:"hash"`
+	//					} `json:"parts"`
+	//				} `json:"block_id"`
+	//				Signature string `json:"signature"`
+	//			} `json:"precommits"`
+	//		} `json:"last_commit"`
+	//	} `json:"block"`
+	//}
+	TxResult struct {
+		Tx struct {
+			Type string `json:"@type"`
+			Body struct {
+				Messages         []json.RawMessage `json:"messages"`
+				Memo             string            `json:"memo"`
+				TimeoutHeight    string            `json:"timeout_height"`
+				ExtensionOptions []struct {
+					TypeURL string `json:"type_url"`
+					Value   string `json:"value"`
+				} `json:"extension_options"`
+				NonCriticalExtensionOptions []struct {
+					TypeURL string `json:"type_url"`
+					Value   string `json:"value"`
+				} `json:"non_critical_extension_options"`
+			} `json:"body"`
+			AuthInfo struct {
+				SignerInfos []struct {
+					PublicKey struct {
+						TypeURL string `json:"type_url"`
+						Value   string `json:"value"`
+					} `json:"public_key"`
+					ModeInfo struct {
+						Single struct {
+							Mode string `json:"mode"`
+						} `json:"single"`
+						Multi struct {
+							Bitarray struct {
+								ExtraBitsStored int    `json:"extra_bits_stored"`
+								Elems           string `json:"elems"`
+							} `json:"bitarray"`
+							ModeInfos []interface{} `json:"mode_infos"`
+						} `json:"multi"`
+					} `json:"mode_info"`
+					Sequence string `json:"sequence"`
+				} `json:"signer_infos"`
+				Fee struct {
+					Amount []struct {
+						Denom  string          `json:"denom"`
+						Amount decimal.Decimal `json:"amount"`
+					} `json:"amount"`
+					GasLimit decimal.Decimal `json:"gas_limit"`
+					Payer    string          `json:"payer"`
+					Granter  string          `json:"granter"`
+				} `json:"fee"`
+			} `json:"auth_info"`
+			Signatures []string `json:"signatures"`
+		} `json:"tx"`
+		TxResponse struct {
+			Height    uint64 `json:"height,string"`
+			Txhash    string `json:"txhash"`
+			Codespace string `json:"codespace"`
+			Code      int    `json:"code"`
+			Data      string `json:"data"`
+			RawLog    string `json:"raw_log"`
+			Logs      []struct {
+				MsgIndex int    `json:"msg_index"`
+				Log      string `json:"log"`
+				Events   []struct {
+					Type       string `json:"type"`
+					Attributes []struct {
+						Key   string `json:"key"`
+						Value string `json:"value"`
+					} `json:"attributes"`
+				} `json:"events"`
+			} `json:"logs"`
+			Info      string `json:"info"`
+			GasWanted uint64 `json:"gas_wanted,string"`
+			GasUsed   uint64 `json:"gas_used,string"`
+			Tx        struct {
+				TypeURL string `json:"type_url"`
+				Value   string `json:"value"`
+			} `json:"tx"`
+			Timestamp time.Time `json:"timestamp"`
+		} `json:"tx_response"`
 	}
 )
 
@@ -304,4 +506,24 @@ func (api API) ProposalTallyResult(id uint64) (result ProposalTallyResult, err e
 		return result, fmt.Errorf("request: %s", err.Error())
 	}
 	return result, nil
+}
+
+func (api API) GetBlock(id uint64) (result Block, err error) {
+	err = api.request(fmt.Sprintf("/cosmos/base/tendermint/v1beta1/blocks/%d", id), &result)
+	if err != nil {
+		return result, fmt.Errorf("request: %s", err.Error())
+	}
+	return result, nil
+}
+
+func (api API) GetTransaction(hash string) (result TxResult, err error) {
+	err = api.request(fmt.Sprintf("/cosmos/tx/v1beta1/txs/%s", hash), &result)
+	if err != nil {
+		return result, fmt.Errorf("request: %s", err.Error())
+	}
+	return result, nil
+}
+
+func Precision(amount decimal.Decimal) decimal.Decimal {
+	return amount.Div(PrecisionDiv)
 }

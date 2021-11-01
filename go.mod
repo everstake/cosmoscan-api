@@ -6,6 +6,7 @@ replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alp
 
 require (
 	github.com/Masterminds/squirrel v1.4.0
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/cosmos/cosmos-sdk v0.42.1
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang-migrate/migrate/v4 v4.11.0

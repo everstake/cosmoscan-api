@@ -40,6 +40,22 @@ func (s *ServiceFacade) GetValidatorMap() (map[string]node.Validator, error) {
 	return mp, nil
 }
 
+func (s *ServiceFacade) getConsensusValidatorMap() (map[string]node.Validator, error) {
+	vMap, err := s.GetValidatorMap()
+	if err != nil {
+		return nil, fmt.Errorf("GetValidatorMap: %s", err.Error())
+	}
+	cvMap := make(map[string]node.Validator)
+	for _, v := range vMap {
+		consAddress, err := helpers.GetHexAddressFromBase64PK(v.ConsensusPubkey.Key)
+		if err != nil {
+			return nil, fmt.Errorf("helpers.GetHexAddressFromBase64PK: %s", err.Error())
+		}
+		cvMap[consAddress] = v
+	}
+	return cvMap, nil
+}
+
 func (s *ServiceFacade) makeValidatorMap() (map[string]node.Validator, error) {
 	mp := make(map[string]node.Validator)
 	validators, err := s.node.GetValidators()

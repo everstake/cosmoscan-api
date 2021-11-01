@@ -88,7 +88,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -119,7 +119,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -150,7 +150,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -181,7 +181,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -212,7 +212,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -243,7 +243,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -274,7 +274,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -305,7 +305,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -335,7 +335,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -366,7 +366,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -397,7 +397,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -512,7 +512,7 @@ paths:
                           type: string
                         value:
                           type: number
-                example: {total: 4321, parts: [{title: everstake, value: 123}]}
+                example: { total: 4321, parts: [ { title: everstake, value: 123 } ] }
   /proposals:
     get:
       tags:
@@ -702,7 +702,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -733,7 +733,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [hour, day, week, month]
+            enum: [ hour, day, week, month ]
         - name: from
           in: query
           required: false
@@ -1023,6 +1023,180 @@ paths:
                           type: number
                   total:
                     type: number
+  /blocks:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+            maximum: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      tags:
+        - Services
+      summary: Get list of blocks
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        height:
+                          type: string
+                        hash:
+                          type: string
+                        proposer:
+                          type: string
+                        proposer_address:
+                          type: string
+                        created_at:
+                          type: number
+                  total:
+                    type: number
+  /block/{height}:
+    get:
+      parameters:
+        - name: height
+          in: path
+          required: true
+          schema:
+            type: number
+      tags:
+        - Services
+      summary: Get block
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  height:
+                    type: number
+                  hash:
+                    type: string
+                  total_txs:
+                    type: number
+                  chain_id:
+                    type: string
+                  proposer:
+                    type: string
+                  proposer_address:
+                    type: string
+                  txs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        height:
+                          type: string
+                        hash:
+                          type: string
+                        proposer:
+                          type: string
+                        proposer_address:
+                          type: string
+                        created_at:
+                          type: number
+                  created_at:
+                    type: number
+  /transactions:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: number
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: number
+      tags:
+        - Services
+      summary: Get list of transactions
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        hash:
+                          type: string
+                        status:
+                          type: boolean
+                        fee:
+                          type: string
+                        height:
+                          type: number
+                        messages:
+                          type: number
+                        created_at:
+                          type: number
+                  total:
+                    type: number
+  /transaction/{hash}:
+    get:
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Services
+      summary: Get block
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hash:
+                    type: string
+                  type:
+                    type: string
+                  status:
+                    type: boolean
+                  fee:
+                    type: string
+                  height:
+                    type: number
+                  gas_used:
+                    type: number
+                  gas_wanted:
+                    type: number
+                  memo:
+                    type: string
+                  messages:
+                    type: array
+                    items:
+                      type: string
+                  created_at:
+                    type: number
 components:
   schemas:
     agg_item:
@@ -1035,7 +1209,7 @@ components:
           value:
             type: number
       example:
-        [{time: 1591258057, value: "32.32"}, {time: 1591258052, value: "5"}]
+        [ { time: 1591258057, value: "32.32" }, { time: 1591258052, value: "5" } ]
     validator_item:
       type: array
       items:
@@ -1046,4 +1220,4 @@ components:
           value:
             type: number
       example:
-        [{validator: "validator1", value: 2}, {validator: "validator2", value: 32}]
+        [ { validator: "validator1", value: 2 }, { validator: "validator2", value: 32 } ]
