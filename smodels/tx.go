@@ -1,6 +1,7 @@
 package smodels
 
 import (
+	"encoding/json"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/shopspring/decimal"
 )
@@ -24,11 +25,10 @@ type (
 		GasWanted uint64          `json:"gas_wanted"`
 		Memo      string          `json:"memo"`
 		CreatedAt dmodels.Time    `json:"created_at"`
-		Messages  []interface{}   `json:"messages"`
+		Messages  []Message       `json:"messages"`
 	}
-	SendMsg struct {
-		From   string          `json:"from"`
-		To     string          `json:"to"`
-		Amount decimal.Decimal `json:"amount"`
+	Message struct {
+		Type string          `json:"type"`
+		Body json.RawMessage `json:"body"`
 	}
 )

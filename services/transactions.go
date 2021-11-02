@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
@@ -8,6 +9,7 @@ import (
 	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/everstake/cosmoscan-api/smodels"
 	"github.com/shopspring/decimal"
+	"strings"
 )
 
 func (s *ServiceFacade) GetAggTransactionsFee(filter filters.Agg) (items []smodels.AggItem, err error) {
@@ -34,6 +36,10 @@ func (s *ServiceFacade) GetAvgOperationsPerBlock(filter filters.Agg) (items []sm
 	return items, nil
 }
 
+type baseMsg struct {
+	Type string `json:"@type"`
+}
+
 func (s *ServiceFacade) GetTransaction(hash string) (tx smodels.Tx, err error) {
 	dTx, err := s.node.GetTransaction(hash)
 	if err != nil {
@@ -45,14 +51,17 @@ func (s *ServiceFacade) GetTransaction(hash string) (tx smodels.Tx, err error) {
 			fee = fee.Add(a.Amount)
 		}
 	}
-	var msgs []interface{}
+	var msgs []smodels.Message
 	for _, m := range dTx.Tx.Body.Messages {
-		msg, err := parseMsg(m)
+		var bm baseMsg
+		err = json.Unmarshal(m, &bm)
 		if err != nil {
-			log.Warn("GetTransaction: parseMsg: %s", err.Error())
+			log.Warn("GetTransaction: parse baseMsg: %s", err.Error())
 			continue
 		}
-		msgs = append(msgs, msg)
+		parts := strings.Split(bm.Type, ".")
+		t := strings.Trim(parts[len(parts)-1], "Msg")
+		msgs = append(msgs, smodels.Message{Type: t, Body: m})
 	}
 	success := dTx.TxResponse.Code == 0
 	fee = node.Precision(fee)
