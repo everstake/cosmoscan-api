@@ -91,7 +91,7 @@ func (db DB) GetAvgOperationsPerBlock(filter filters.Agg) (items []smodels.AggIt
 }
 
 func (db DB) GetTransactions(filter filters.Transactions) (items []dmodels.Transaction, err error) {
-	q := squirrel.Select("*").From(dmodels.TransactionsTable)
+	q := squirrel.Select("*").From(dmodels.TransactionsTable).OrderBy("trn_created_at desc")
 	if filter.Height != 0 {
 		q = q.Where(squirrel.Eq{"trn_height": filter.Height})
 	}
