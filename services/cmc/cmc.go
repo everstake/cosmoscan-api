@@ -71,7 +71,7 @@ func (cmc *CMC) request(endpoint string, data interface{}) error {
 
 func (cmc *CMC) GetCurrencies() (currencies []Currency, err error) {
 	var currencyResp CurrenciesResponse
-	err = cmc.request("/v1/cryptocurrency/listings/latest", &currencyResp)
+	err = cmc.request("/v1/cryptocurrency/listings/latest?sort=symbol&limit=5000", &currencyResp)
 	if currencyResp.Status.ErrorCode != 0 {
 		return nil, fmt.Errorf("error code: %d, msg: %s", currencyResp.Status.ErrorCode, currencyResp.Status.ErrorMessage)
 	}

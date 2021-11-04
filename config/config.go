@@ -10,7 +10,7 @@ import (
 const (
 	ServiceName = "cosmoscan-api"
 	configPath  = "./config.json"
-	Currency    = "atom"
+	Currency    = "btsg"
 )
 
 type (

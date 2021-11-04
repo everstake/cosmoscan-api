@@ -29,6 +29,7 @@ const ParserTitle = "hub3"
 
 const batchTxs = 50
 const precision = 6
+const mainUint = "ubtsg"
 
 var precisionDiv = decimal.New(1, precision)
 
@@ -89,18 +90,19 @@ func (p *Parser) Run() error {
 	for i := uint64(0); i < p.cfg.Parser.Fetchers; i++ {
 		go p.runFetcher()
 	}
-	if model.Height == 0 {
-		err = p.parseGenesisState()
-		if err != nil {
-			return fmt.Errorf("parseGenesisState: %s", err.Error())
-		}
-		p.setAccounts()
-	}
+	//if model.Height == 0 {
+	//	err = p.parseGenesisState()
+	//	if err != nil {
+	//		return fmt.Errorf("parseGenesisState: %s", err.Error())
+	//	}
+	//	p.setAccounts()
+	//}
 	go p.saving()
 	for {
 		latestBlock, err := p.api.GetLatestBlock()
 		if err != nil {
 			log.Error("Parser: api.GetLatestBlock: %s", err.Error())
+			<-time.After(time.Second)
 			continue
 		}
 		if model.Height >= latestBlock.Block.Header.Height {
@@ -203,9 +205,9 @@ func (p *Parser) runFetcher() {
 
 				success := tx.TxResponse.Code == 0
 
-				fee, err := calculateAtomAmount(tx.Tx.AuthInfo.Fee.Amount)
+				fee, err := calculateMainAmount(tx.Tx.AuthInfo.Fee.Amount)
 				if err != nil {
-					log.Warn("Parser: height: %d, calculateAtomAmount: %s", tx.TxResponse.Height, err.Error())
+					log.Warn("Parser: height: %d, calculateMainAmount: %s", tx.TxResponse.Height, err.Error())
 				}
 
 				if tx.TxResponse.Hash == "" {
@@ -509,7 +511,7 @@ func (d *data) parseMsgSend(index int, tx Tx, data []byte) (err error) {
 	}
 	currency, amount, err := calculateAmount(m.Amount)
 	if err != nil {
-		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+		return fmt.Errorf("calculateMainAmount: %s", err.Error())
 	}
 	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.transfers = append(d.transfers, dmodels.Transfer{
@@ -534,7 +536,7 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 		id := makeHash(fmt.Sprintf("%s.%d.i.%d", tx.TxResponse.Hash, index, i))
 		currency, amount, err := calculateAmount(input.Coins)
 		if err != nil {
-			return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+			return fmt.Errorf("calculateMainAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
@@ -550,7 +552,7 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 		id := makeHash(fmt.Sprintf("%s.%d.o.%d", tx.TxResponse.Hash, index, i))
 		currency, amount, err := calculateAmount(output.Coins)
 		if err != nil {
-			return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+			return fmt.Errorf("calculateMainAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
@@ -707,13 +709,13 @@ func (d *data) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error)
 	if id == 0 {
 		return fmt.Errorf("not found proposal_id")
 	}
-	amount, err := calculateAtomAmount(m.Content.Value.Amount)
+	amount, err := calculateMainAmount(m.Content.Value.Amount)
 	if err != nil {
-		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+		return fmt.Errorf("calculateMainAmount: %s", err.Error())
 	}
-	initDeposit, err := calculateAtomAmount(m.InitialDeposit)
+	initDeposit, err := calculateMainAmount(m.InitialDeposit)
 	if err != nil {
-		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
+		return fmt.Errorf("calculateMainAmount: %s", err.Error())
 	}
 	d.proposals = append(d.proposals, dmodels.HistoryProposal{
 		ID:          id,
@@ -838,13 +840,13 @@ func (d *data) parseUnjailMsg(index int, tx Tx, data []byte) (err error) {
 	return nil
 }
 
-func calculateAtomAmount(amountItems []Amount) (decimal.Decimal, error) {
+func calculateMainAmount(amountItems []Amount) (decimal.Decimal, error) {
 	volume := decimal.Zero
 	for _, item := range amountItems {
 		if item.Denom == "" && item.Amount.IsZero() { // example height=1245781
 			break
 		}
-		if item.Denom != "uatom" {
+		if item.Denom != mainUint {
 			return volume, fmt.Errorf("unknown demon (currency): %s", item.Denom)
 		}
 		volume = volume.Add(item.Amount)
@@ -867,9 +869,9 @@ func calculateAmount(amountItems []Amount) (string, decimal.Decimal, error) {
 		}
 		volume = volume.Add(item.Amount)
 	}
-	if lastCurrency == "uatom" {
+	if lastCurrency == mainUint {
 		volume = volume.Div(precisionDiv)
-		lastCurrency = "atom"
+		lastCurrency = mainUint
 	}
 	return lastCurrency, volume, nil
 }
@@ -878,7 +880,7 @@ func (a Amount) getAmount() (decimal.Decimal, error) {
 	if a.Denom == "" && a.Amount.IsZero() {
 		return decimal.Zero, nil
 	}
-	if a.Denom != "uatom" {
+	if a.Denom != mainUint {
 		return decimal.Zero, fmt.Errorf("unknown demon (currency): %s", a.Denom)
 	}
 	a.Amount = a.Amount.Div(precisionDiv)
@@ -889,7 +891,7 @@ func strToAmount(str string) (decimal.Decimal, error) {
 	if str == "" {
 		return decimal.Zero, nil
 	}
-	val := strings.TrimSuffix(str, "uatom")
+	val := strings.TrimSuffix(str, mainUint)
 	amount, err := decimal.NewFromString(val)
 	if err != nil {
 		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())

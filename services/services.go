@@ -53,7 +53,6 @@ type (
 		GetValidatorDelegators(filter filters.ValidatorDelegators) (resp smodels.PaginatableResponse, err error)
 		GetAggBondedRatio(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggUnbondingVolume(filter filters.Agg) (items []smodels.AggItem, err error)
-		Test() (state dmodels.HistoricalState, err error)
 		GetBlock(height uint64) (block smodels.Block, err error)
 		GetBlocks(filter filters.Blocks) (resp smodels.PaginatableResponse, err error)
 		GetTransaction(hash string) (tx smodels.Tx, err error)

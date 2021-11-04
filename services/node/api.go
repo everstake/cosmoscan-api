@@ -19,7 +19,7 @@ const (
 	RejectedProposalStatus      = "PROPOSAL_STATUS_REJECTED"
 	FailedProposalStatus        = "PROPOSAL_STATUS_FAILED"
 
-	MainUnit = "uatom"
+	MainUnit = "ubtsg"
 )
 
 var PrecisionDiv = decimal.New(1, precision)
@@ -397,7 +397,7 @@ func (api API) GetCommunityPoolAmount() (amount decimal.Decimal, err error) {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	for _, p := range cp.Pool {
-		if p.Denom == "uatom" {
+		if p.Denom == MainUnit {
 			amount = amount.Add(p.Amount)
 		}
 	}
@@ -424,7 +424,7 @@ func (api API) GetInflation() (amount decimal.Decimal, err error) {
 
 func (api API) GetTotalSupply() (amount decimal.Decimal, err error) {
 	var s Supply
-	err = api.request("cosmos/bank/v1beta1/supply/uatom", &s)
+	err = api.request(fmt.Sprintf("cosmos/bank/v1beta1/supply/%s", MainUnit), &s)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
@@ -448,7 +448,7 @@ func (api API) GetBalance(address string) (amount decimal.Decimal, err error) {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	for _, b := range result.Balances {
-		if b.Denom == "uatom" {
+		if b.Denom == MainUnit {
 			amount = amount.Add(b.Amount)
 		}
 	}

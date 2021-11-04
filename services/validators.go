@@ -18,6 +18,7 @@ import (
 const validatorsMapCacheKey = "validators_map"
 const validatorsCacheKey = "validators"
 const mostJailedValidators = "mostJailedValidators"
+const Bech32PrefixValAddr = "bitsongvaloper"
 
 func (s *ServiceFacade) UpdateValidatorsMap() {
 	mp, err := s.makeValidatorMap()
@@ -136,7 +137,7 @@ func (s *ServiceFacade) makeValidators() (validators []smodels.Validator, err er
 			return nil, fmt.Errorf("dao.GetProposedBlocksTotal: %s", err.Error())
 		}
 
-		addressBytes, err := types.GetFromBech32(v.OperatorAddress, types.Bech32PrefixValAddr)
+		addressBytes, err := types.GetFromBech32(v.OperatorAddress, Bech32PrefixValAddr)
 		if err != nil {
 			return nil, fmt.Errorf("types.GetFromBech32: %s", err.Error())
 		}
@@ -341,7 +342,7 @@ func (s *ServiceFacade) GetValidatorBalance(valAddress string) (balance smodels.
 	}
 	balance.SelfDelegated = validator.SelfStake
 	balance.OtherDelegated = validator.Power.Sub(validator.SelfStake)
-	addressBytes, err := types.GetFromBech32(valAddress, types.Bech32PrefixValAddr)
+	addressBytes, err := types.GetFromBech32(valAddress, Bech32PrefixValAddr)
 	if err != nil {
 		return balance, fmt.Errorf("types.GetFromBech32: %s", err.Error())
 	}

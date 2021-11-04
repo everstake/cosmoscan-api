@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const genesisJson = "https://raw.githubusercontent.com/cosmos/launch/master/genesis.json"
+const genesisJson = ""
 const saveGenesisBatch = 100
 
 type Genesis struct {
@@ -139,7 +139,7 @@ func (p *Parser) parseGenesisState() error {
 		accountDelegation[delegation.Delegator] = accountDelegation[delegation.Delegator].Add(delegation.Amount)
 	}
 	for _, account := range state.AppState.Accounts {
-		amount, _ := calculateAtomAmount(account.Coins)
+		amount, _ := calculateMainAmount(account.Coins)
 		accounts = append(accounts, dmodels.Account{
 			Address:   account.Address,
 			Balance:   amount,

@@ -6,7 +6,7 @@ import (
 )
 
 const TransfersTable = "transfers"
-const CosmosCurrency = "atom"
+const CosmosCurrency = "btsg"
 
 type Transfer struct {
 	ID        string          `db:"trf_id"`
