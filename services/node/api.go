@@ -350,7 +350,7 @@ func (api API) GetInflation() (amount decimal.Decimal, err error) {
 
 func (api API) GetTotalSupply() (amount decimal.Decimal, err error) {
 	var s Supply
-	err = api.request("cosmos/bank/v1beta1/supply/uatom", &s)
+	err = api.request(fmt.Sprintf("cosmos/bank/v1beta1/supply/%s", MainUnit), &s)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}

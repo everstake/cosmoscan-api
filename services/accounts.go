@@ -75,19 +75,19 @@ func (s *ServiceFacade) updateAccount(account dmodels.Account) error {
 }
 
 func (s *ServiceFacade) GetAccount(address string) (account smodels.Account, err error) {
-	balance, err := s.node.GetBalance(account.Address)
+	balance, err := s.node.GetBalance(address)
 	if err != nil {
 		return account, fmt.Errorf("node.GetBalance: %s", err.Error())
 	}
-	stake, err := s.node.GetStake(account.Address)
+	stake, err := s.node.GetStake(address)
 	if err != nil {
 		return account, fmt.Errorf("node.GetStake: %s", err.Error())
 	}
-	unbonding, err := s.node.GetUnbonding(account.Address)
+	unbonding, err := s.node.GetUnbonding(address)
 	if err != nil {
 		return account, fmt.Errorf("node.GetUnbonding: %s", err.Error())
 	}
-	rewards, err := s.node.GetStakeRewards(account.Address)
+	rewards, err := s.node.GetStakeRewards(address)
 	if err != nil {
 		return account, fmt.Errorf("node.GetStakeRewards: %s", err.Error())
 	}
