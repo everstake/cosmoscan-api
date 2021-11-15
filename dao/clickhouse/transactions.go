@@ -95,6 +95,9 @@ func (db DB) GetTransactions(filter filters.Transactions) (items []dmodels.Trans
 	if filter.Height != 0 {
 		q = q.Where(squirrel.Eq{"trn_height": filter.Height})
 	}
+	if filter.Address != "" {
+		q = q.Where(squirrel.Eq{"trn_signer": filter.Address})
+	}
 	if filter.Limit != 0 {
 		q = q.Limit(filter.Limit)
 	}

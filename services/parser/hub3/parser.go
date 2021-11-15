@@ -14,6 +14,7 @@ import (
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/everstake/cosmoscan-api/services/helpers"
+	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/shopspring/decimal"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/bytes"
@@ -215,14 +216,21 @@ func (p *Parser) runFetcher() {
 					break
 				}
 
+				var signer string
+				if len(tx.Tx.AuthInfo.SignerInfos) == 0 {
+					signer, _ = helpers.GetHexAddressFromBase64PK(tx.Tx.AuthInfo.SignerInfos[0].PublicKey.Key)
+				}
+
 				d.transactions = append(d.transactions, dmodels.Transaction{
 					Hash:      tx.TxResponse.Hash,
+					BlockID:   height,
 					Status:    success,
 					Height:    tx.TxResponse.Height,
 					Messages:  uint64(len(tx.TxResponse.Tx.Body.Messages)),
 					Fee:       fee,
 					GasUsed:   tx.TxResponse.GasUsed,
 					GasWanted: tx.TxResponse.GasWanted,
+					Signer:    signer,
 					CreatedAt: tx.TxResponse.Timestamp,
 				})
 
@@ -844,7 +852,7 @@ func calculateAtomAmount(amountItems []Amount) (decimal.Decimal, error) {
 		if item.Denom == "" && item.Amount.IsZero() { // example height=1245781
 			break
 		}
-		if item.Denom != "uatom" {
+		if item.Denom != node.MainUnit {
 			return volume, fmt.Errorf("unknown demon (currency): %s", item.Denom)
 		}
 		volume = volume.Add(item.Amount)
@@ -867,9 +875,9 @@ func calculateAmount(amountItems []Amount) (string, decimal.Decimal, error) {
 		}
 		volume = volume.Add(item.Amount)
 	}
-	if lastCurrency == "uatom" {
+	if lastCurrency == node.MainUnit {
 		volume = volume.Div(precisionDiv)
-		lastCurrency = "atom"
+		lastCurrency = config.Currency
 	}
 	return lastCurrency, volume, nil
 }
@@ -878,7 +886,7 @@ func (a Amount) getAmount() (decimal.Decimal, error) {
 	if a.Denom == "" && a.Amount.IsZero() {
 		return decimal.Zero, nil
 	}
-	if a.Denom != "uatom" {
+	if a.Denom != node.MainUnit {
 		return decimal.Zero, fmt.Errorf("unknown demon (currency): %s", a.Denom)
 	}
 	a.Amount = a.Amount.Div(precisionDiv)
@@ -889,7 +897,7 @@ func strToAmount(str string) (decimal.Decimal, error) {
 	if str == "" {
 		return decimal.Zero, nil
 	}
-	val := strings.TrimSuffix(str, "uatom")
+	val := strings.TrimSuffix(str, node.MainUnit)
 	amount, err := decimal.NewFromString(val)
 	if err != nil {
 		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())

@@ -85,6 +85,12 @@ type (
 				Memo     string            `json:"memo"`
 			} `json:"body"`
 			AuthInfo struct {
+				SignerInfos []struct {
+					PublicKey struct {
+						Type string `json:"@type"`
+						Key  string `json:"key"`
+					} `json:"public_key"`
+				} `json:"signer_infos"`
 				Fee struct {
 					Amount   []Amount `json:"amount"`
 					GasLimit uint64   `json:"gas_limit,string"`
