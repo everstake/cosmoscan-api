@@ -17,10 +17,12 @@ func (db DB) CreateTransactions(transactions []dmodels.Transaction) error {
 		"trn_hash",
 		"trn_status",
 		"trn_height",
+		"trn_height",
 		"trn_messages",
 		"trn_fee",
 		"trn_gas_used",
 		"trn_gas_wanted",
+		"trn_signer",
 		"trn_created_at",
 	)
 	for _, tx := range transactions {
@@ -37,10 +39,12 @@ func (db DB) CreateTransactions(transactions []dmodels.Transaction) error {
 			tx.Hash,
 			tx.Status,
 			tx.Height,
+			tx.Height,
 			tx.Messages,
 			tx.Fee,
 			tx.GasUsed,
 			tx.GasWanted,
+			tx.Signer,
 			tx.CreatedAt,
 		)
 	}
