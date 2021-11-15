@@ -1126,6 +1126,11 @@ paths:
           required: false
           schema:
             type: number
+        - name: address
+          in: query
+          required: false
+          schema:
+            type: string
       tags:
         - Services
       summary: Get list of transactions
@@ -1196,6 +1201,35 @@ paths:
                     items:
                       type: string
                   created_at:
+                    type: number
+  /account/{address}:
+    get:
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - Services
+      summary: Get Account info
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address:
+                    type: string
+                  balance:
+                    type: number
+                  delegated:
+                    type: number
+                  unbonding:
+                    type: number
+                  stake_reward:
                     type: number
 components:
   schemas:

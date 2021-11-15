@@ -132,6 +132,7 @@ func (api *API) loadRoutes() {
 		{Path: "/block/{height}", Method: http.MethodGet, Func: api.GetBlock},
 		{Path: "/transactions", Method: http.MethodGet, Func: api.GetTransactions},
 		{Path: "/transaction/{hash}", Method: http.MethodGet, Func: api.GetTransaction},
+		{Path: "/account/{address}", Method: http.MethodGet, Func: api.GetAccount},
 	})
 
 }
