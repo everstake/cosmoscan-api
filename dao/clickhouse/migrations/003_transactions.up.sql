@@ -8,7 +8,6 @@ create table transactions
     trn_fee        Decimal128(18),
     trn_gas_used   UInt64,
     trn_gas_wanted UInt64,
-    trn_signer     FixedString(45),
     trn_created_at DateTime
 ) ENGINE ReplacingMergeTree()
       PARTITION BY toYYYYMMDD(trn_created_at)

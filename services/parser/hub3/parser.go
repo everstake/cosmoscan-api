@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
 	"github.com/everstake/cosmoscan-api/dao/filters"
@@ -27,6 +28,7 @@ import (
 
 const repeatDelay = time.Second * 5
 const ParserTitle = "hub3"
+const AddressLength = 45
 
 const batchTxs = 50
 const precision = 6
@@ -64,6 +66,7 @@ type (
 		proposalDeposits []dmodels.ProposalDeposit
 		jailers          []dmodels.Jailer
 		missedBlocks     []dmodels.MissedBlock
+		accountTxs       []dmodels.AccountTx
 	}
 )
 
@@ -216,23 +219,30 @@ func (p *Parser) runFetcher() {
 					break
 				}
 
-				var signer string
-				if len(tx.Tx.AuthInfo.SignerInfos) == 0 {
-					signer, _ = helpers.GetHexAddressFromBase64PK(tx.Tx.AuthInfo.SignerInfos[0].PublicKey.Key)
-				}
-
 				d.transactions = append(d.transactions, dmodels.Transaction{
 					Hash:      tx.TxResponse.Hash,
-					BlockID:   height,
 					Status:    success,
 					Height:    tx.TxResponse.Height,
 					Messages:  uint64(len(tx.TxResponse.Tx.Body.Messages)),
 					Fee:       fee,
 					GasUsed:   tx.TxResponse.GasUsed,
 					GasWanted: tx.TxResponse.GasWanted,
-					Signer:    signer,
 					CreatedAt: tx.TxResponse.Timestamp,
 				})
+
+				// account - transactions relations
+				accTxsMap := make(map[string]struct{})
+				for _, msg := range tx.Tx.Body.Messages {
+					for _, address := range fetchAddressesFromMessage(msg) {
+						accTxsMap[address] = struct{}{}
+					}
+				}
+				for address := range accTxsMap {
+					d.accountTxs = append(d.accountTxs, dmodels.AccountTx{
+						Account: address,
+						TxHash:  tx.TxResponse.Hash,
+					})
+				}
 
 				if success {
 					for i, msg := range tx.Tx.Body.Messages {
@@ -350,6 +360,7 @@ func (p *Parser) saving() {
 			singleData.proposalVotes = append(singleData.proposalVotes, item.proposalVotes...)
 			singleData.proposalDeposits = append(singleData.proposalDeposits, item.proposalDeposits...)
 			singleData.missedBlocks = append(singleData.missedBlocks, item.missedBlocks...)
+			singleData.accountTxs = append(singleData.accountTxs, item.accountTxs...)
 		}
 		p.wg.Add(1)
 		var err error
@@ -439,6 +450,14 @@ func (p *Parser) saving() {
 				break
 			}
 			log.Error("Parser: dao.CreateMissedBlocks: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateAccountTxs(singleData.accountTxs)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateAccountTxs: %s", err.Error())
 			<-time.After(repeatDelay)
 		}
 		p.saveNewAccounts(singleData)
@@ -909,4 +928,25 @@ func strToAmount(str string) (decimal.Decimal, error) {
 func makeHash(str string) string {
 	hash := sha1.Sum([]byte(str))
 	return hex.EncodeToString(hash[:])
+}
+
+func fetchAddressesFromMessage(msg json.RawMessage) []string {
+	var obj map[string]interface{}
+	json.Unmarshal(msg, &obj)
+	return getAddresses(obj)
+}
+
+func getAddresses(v interface{}) []string {
+	var addresses []string
+	switch val := v.(type) {
+	case map[string]interface{}:
+		for _, vi := range val {
+			addresses = append(addresses, getAddresses(vi)...)
+		}
+	case string:
+		if len(val) == AddressLength && strings.HasPrefix(val, types.Bech32MainPrefix) {
+			addresses = append(addresses, val)
+		}
+	}
+	return addresses
 }

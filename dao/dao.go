@@ -91,6 +91,7 @@ type (
 		GetMissedBlocksCount(filter filters.MissedBlocks) (total uint64, err error)
 		GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error)
 		GetValidatorDelegatorsTotal(filter filters.ValidatorDelegators) (total uint64, err error)
+		CreateAccountTxs(accountTxs []dmodels.AccountTx) error
 	}
 
 	Cache interface {

@@ -9,13 +9,11 @@ const TransactionsTable = "transactions"
 
 type Transaction struct {
 	Hash      string          `db:"trn_hash"`
-	BlockID   uint64          `db:"trn_block_id"`
 	Status    bool            `db:"trn_status"`
 	Height    uint64          `db:"trn_height"`
 	Messages  uint64          `db:"trn_messages"`
 	Fee       decimal.Decimal `db:"trn_fee"`
 	GasUsed   uint64          `db:"trn_gas_used"`
 	GasWanted uint64          `db:"trn_gas_wanted"`
-	Signer    string          `db:"trn_signer"`
 	CreatedAt time.Time       `db:"trn_created_at"`
 }
