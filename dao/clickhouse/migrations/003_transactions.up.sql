@@ -1,6 +1,7 @@
 create table transactions
 (
     trn_hash       FixedString(64),
+    trn_block_id   UInt64,
     trn_status     UInt8,
     trn_height     UInt64,
     trn_messages   UInt32,

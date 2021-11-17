@@ -8,12 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/everstake/cosmoscan-api/services/helpers"
+	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/shopspring/decimal"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/bytes"
@@ -26,10 +28,10 @@ import (
 
 const repeatDelay = time.Second * 5
 const ParserTitle = "hub3"
+const AddressLength = 46
 
 const batchTxs = 50
 const precision = 6
-const mainUint = "ubtsg"
 
 var precisionDiv = decimal.New(1, precision)
 
@@ -64,6 +66,7 @@ type (
 		proposalDeposits []dmodels.ProposalDeposit
 		jailers          []dmodels.Jailer
 		missedBlocks     []dmodels.MissedBlock
+		accountTxs       []dmodels.AccountTx
 	}
 )
 
@@ -228,6 +231,20 @@ func (p *Parser) runFetcher() {
 					CreatedAt: tx.TxResponse.Timestamp,
 				})
 
+				// account - transactions relations
+				accTxsMap := make(map[string]struct{})
+				for _, msg := range tx.Tx.Body.Messages {
+					for _, address := range fetchAddressesFromMessage(msg) {
+						accTxsMap[address] = struct{}{}
+					}
+				}
+				for address := range accTxsMap {
+					d.accountTxs = append(d.accountTxs, dmodels.AccountTx{
+						Account: address,
+						TxHash:  tx.TxResponse.Hash,
+					})
+				}
+
 				if success {
 					for i, msg := range tx.Tx.Body.Messages {
 						var baseMsg BaseMsg
@@ -344,6 +361,7 @@ func (p *Parser) saving() {
 			singleData.proposalVotes = append(singleData.proposalVotes, item.proposalVotes...)
 			singleData.proposalDeposits = append(singleData.proposalDeposits, item.proposalDeposits...)
 			singleData.missedBlocks = append(singleData.missedBlocks, item.missedBlocks...)
+			singleData.accountTxs = append(singleData.accountTxs, item.accountTxs...)
 		}
 		p.wg.Add(1)
 		var err error
@@ -433,6 +451,14 @@ func (p *Parser) saving() {
 				break
 			}
 			log.Error("Parser: dao.CreateMissedBlocks: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
+		for {
+			err = p.dao.CreateAccountTxs(singleData.accountTxs)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateAccountTxs: %s", err.Error())
 			<-time.After(repeatDelay)
 		}
 		p.saveNewAccounts(singleData)
@@ -846,7 +872,7 @@ func calculateMainAmount(amountItems []Amount) (decimal.Decimal, error) {
 		if item.Denom == "" && item.Amount.IsZero() { // example height=1245781
 			break
 		}
-		if item.Denom != mainUint {
+		if item.Denom != node.MainUnit {
 			return volume, fmt.Errorf("unknown demon (currency): %s", item.Denom)
 		}
 		volume = volume.Add(item.Amount)
@@ -869,9 +895,9 @@ func calculateAmount(amountItems []Amount) (string, decimal.Decimal, error) {
 		}
 		volume = volume.Add(item.Amount)
 	}
-	if lastCurrency == mainUint {
+	if lastCurrency == node.MainUnit {
 		volume = volume.Div(precisionDiv)
-		lastCurrency = mainUint
+		lastCurrency = config.Currency
 	}
 	return lastCurrency, volume, nil
 }
@@ -880,7 +906,7 @@ func (a Amount) getAmount() (decimal.Decimal, error) {
 	if a.Denom == "" && a.Amount.IsZero() {
 		return decimal.Zero, nil
 	}
-	if a.Denom != mainUint {
+	if a.Denom != node.MainUnit {
 		return decimal.Zero, fmt.Errorf("unknown demon (currency): %s", a.Denom)
 	}
 	a.Amount = a.Amount.Div(precisionDiv)
@@ -891,7 +917,7 @@ func strToAmount(str string) (decimal.Decimal, error) {
 	if str == "" {
 		return decimal.Zero, nil
 	}
-	val := strings.TrimSuffix(str, mainUint)
+	val := strings.TrimSuffix(str, node.MainUnit)
 	amount, err := decimal.NewFromString(val)
 	if err != nil {
 		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())
@@ -903,4 +929,25 @@ func strToAmount(str string) (decimal.Decimal, error) {
 func makeHash(str string) string {
 	hash := sha1.Sum([]byte(str))
 	return hex.EncodeToString(hash[:])
+}
+
+func fetchAddressesFromMessage(msg json.RawMessage) []string {
+	var obj map[string]interface{}
+	json.Unmarshal(msg, &obj)
+	return getAddresses(obj)
+}
+
+func getAddresses(v interface{}) []string {
+	var addresses []string
+	switch val := v.(type) {
+	case map[string]interface{}:
+		for _, vi := range val {
+			addresses = append(addresses, getAddresses(vi)...)
+		}
+	case string:
+		if len(val) == AddressLength && strings.HasPrefix(val, types.Bech32MainPrefix) {
+			addresses = append(addresses, val)
+		}
+	}
+	return addresses
 }

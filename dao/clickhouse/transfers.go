@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
+	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/smodels"
@@ -35,7 +36,7 @@ func (db DB) GetAggTransfersVolume(filter filters.Agg) (items []smodels.AggItem,
 		fmt.Sprintf("toDateTime(%s(trf_created_at)) AS time", filter.AggFunc()),
 	).From(dmodels.TransfersTable).
 		Where("notEmpty(trf_from)").
-		Where(squirrel.Eq{"trf_currency": dmodels.CosmosCurrency}).
+		Where(squirrel.Eq{"trf_currency": config.Currency}).
 		GroupBy("time").
 		OrderBy("time")
 	if !filter.From.IsZero() {
@@ -52,7 +53,7 @@ func (db DB) GetTransferVolume(filter filters.TimeRange) (total decimal.Decimal,
 	q := squirrel.Select("sum(trf_amount) as total").
 		From(dmodels.TransfersTable).
 		Where("notEmpty(trf_from)").
-		Where(squirrel.Eq{"trf_currency": dmodels.CosmosCurrency})
+		Where(squirrel.Eq{"trf_currency": config.Currency})
 	q = filter.Query("trf_created_at", q)
 	err = db.FindFirst(&total, q)
 	return total, err

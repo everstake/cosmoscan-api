@@ -72,6 +72,13 @@ type (
 			Amount decimal.Decimal `json:"amount"`
 		} `json:"balances"`
 	}
+	DelegatorRewards struct {
+		Rewards []struct {
+			ValidatorAddress string   `json:"validator_address"`
+			Reward           []Amount `json:"reward"`
+		} `json:"rewards"`
+		Total []Amount `json:"total"`
+	}
 	StakingPool struct {
 		Pool struct {
 			NotBondedTokens decimal.Decimal `json:"not_bonded_tokens"`
@@ -199,91 +206,6 @@ type (
 			} `json:"data"`
 		} `json:"block"`
 	}
-	//Block struct {
-	//	BlockMeta struct {
-	//		Header struct {
-	//			ChainID     string    `json:"chain_id"`
-	//			Height      uint64    `json:"height"`
-	//			Time        time.Time `json:"time"`
-	//			NumTxs      uint64    `json:"num_txs"`
-	//			LastBlockID struct {
-	//				Hash  string `json:"hash"`
-	//				Parts struct {
-	//					Total uint64 `json:"total"`
-	//					Hash  string `json:"hash"`
-	//				} `json:"parts"`
-	//			} `json:"last_block_id"`
-	//			TotalTxs           uint64 `json:"total_txs"`
-	//			LastCommitHash     string `json:"last_commit_hash"`
-	//			DataHash           string `json:"data_hash"`
-	//			ValidatorsHash     string `json:"validators_hash"`
-	//			NextValidatorsHash string `json:"next_validators_hash"`
-	//			ConsensusHash      string `json:"consensus_hash"`
-	//			AppHash            string `json:"app_hash"`
-	//			LastResultsHash    string `json:"last_results_hash"`
-	//			EvidenceHash       string `json:"evidence_hash"`
-	//			ProposerAddress    string `json:"proposer_address"`
-	//		} `json:"header"`
-	//		BlockID struct {
-	//			Hash  string `json:"hash"`
-	//			Parts struct {
-	//				Total int    `json:"total"`
-	//				Hash  string `json:"hash"`
-	//			} `json:"parts"`
-	//		} `json:"block_id"`
-	//	} `json:"block_meta"`
-	//	Block struct {
-	//		Header struct {
-	//			ChainID     string    `json:"chain_id"`
-	//			Height      uint64    `json:"height,string"`
-	//			Time        time.Time `json:"time"`
-	//			NumTxs      int       `json:"num_txs"`
-	//			LastBlockID struct {
-	//				Hash  string `json:"hash"`
-	//				Parts struct {
-	//					Total int    `json:"total"`
-	//					Hash  string `json:"hash"`
-	//				} `json:"parts"`
-	//			} `json:"last_block_id"`
-	//			TotalTxs           int    `json:"total_txs"`
-	//			LastCommitHash     string `json:"last_commit_hash"`
-	//			DataHash           string `json:"data_hash"`
-	//			ValidatorsHash     string `json:"validators_hash"`
-	//			NextValidatorsHash string `json:"next_validators_hash"`
-	//			ConsensusHash      string `json:"consensus_hash"`
-	//			AppHash            string `json:"app_hash"`
-	//			LastResultsHash    string `json:"last_results_hash"`
-	//			EvidenceHash       string `json:"evidence_hash"`
-	//			ProposerAddress    string `json:"proposer_address"`
-	//		} `json:"header"`
-	//		Txs        []string `json:"txs"`
-	//		LastCommit struct {
-	//			BlockID struct {
-	//				Hash  string `json:"hash"`
-	//				Parts struct {
-	//					Total int    `json:"total"`
-	//					Hash  string `json:"hash"`
-	//				} `json:"parts"`
-	//			} `json:"block_id"`
-	//			Precommits []struct {
-	//				ValidatorAddress string    `json:"validator_address"`
-	//				ValidatorIndex   string    `json:"validator_index"`
-	//				Height           string    `json:"height"`
-	//				Round            string    `json:"round"`
-	//				Timestamp        time.Time `json:"timestamp"`
-	//				Type             int       `json:"type"`
-	//				BlockID          struct {
-	//					Hash  string `json:"hash"`
-	//					Parts struct {
-	//						Total int    `json:"total"`
-	//						Hash  string `json:"hash"`
-	//					} `json:"parts"`
-	//				} `json:"block_id"`
-	//				Signature string `json:"signature"`
-	//			} `json:"precommits"`
-	//		} `json:"last_commit"`
-	//	} `json:"block"`
-	//}
 	TxResult struct {
 		Tx struct {
 			Type string `json:"@type"`
@@ -359,6 +281,10 @@ type (
 			} `json:"tx"`
 			Timestamp time.Time `json:"timestamp"`
 		} `json:"tx_response"`
+	}
+	Amount struct {
+		Denom  string          `json:"denom"`
+		Amount decimal.Decimal `json:"amount"`
 	}
 )
 
@@ -448,6 +374,28 @@ func (api API) GetBalance(address string) (amount decimal.Decimal, err error) {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	for _, b := range result.Balances {
+		if b.Denom == MainUnit {
+			amount = amount.Add(b.Amount)
+		}
+	}
+	return amount.Div(PrecisionDiv), nil
+}
+
+func (api API) GetBalances(address string) (result AmountResult, err error) {
+	err = api.request(fmt.Sprintf("cosmos/bank/v1beta1/balances/%s", address), &result)
+	if err != nil {
+		return result, fmt.Errorf("request: %s", err.Error())
+	}
+	return result, nil
+}
+
+func (api API) GetStakeRewards(address string) (amount decimal.Decimal, err error) {
+	var result DelegatorRewards
+	err = api.request(fmt.Sprintf("cosmos/distribution/v1beta1/delegators/%s/rewards", address), &result)
+	if err != nil {
+		return amount, fmt.Errorf("request: %s", err.Error())
+	}
+	for _, b := range result.Total {
 		if b.Denom == MainUnit {
 			amount = amount.Add(b.Amount)
 		}

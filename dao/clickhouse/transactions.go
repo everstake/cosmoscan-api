@@ -91,9 +91,13 @@ func (db DB) GetAvgOperationsPerBlock(filter filters.Agg) (items []smodels.AggIt
 }
 
 func (db DB) GetTransactions(filter filters.Transactions) (items []dmodels.Transaction, err error) {
-	q := squirrel.Select("*").From(dmodels.TransactionsTable).OrderBy("trn_created_at desc")
+	q := squirrel.Select("transactions.*").From(dmodels.TransactionsTable).OrderBy("transactions.trn_created_at desc")
 	if filter.Height != 0 {
-		q = q.Where(squirrel.Eq{"trn_height": filter.Height})
+		q = q.Where(squirrel.Eq{"transactions.trn_height": filter.Height})
+	}
+	if filter.Address != "" {
+		q = q.LeftJoin(fmt.Sprintf("account_txs ON account_txs.atx_tx_hash = transactions.trn_hash")).
+			Where(squirrel.Eq{"account_txs.atx_account": filter.Address})
 	}
 	if filter.Limit != 0 {
 		q = q.Limit(filter.Limit)
@@ -108,7 +112,11 @@ func (db DB) GetTransactions(filter filters.Transactions) (items []dmodels.Trans
 func (db DB) GetTransactionsCount(filter filters.Transactions) (total uint64, err error) {
 	q := squirrel.Select("count(*)").From(dmodels.TransactionsTable)
 	if filter.Height != 0 {
-		q = q.Where(squirrel.Eq{"trn_height": filter.Height})
+		q = q.Where(squirrel.Eq{"transactions.trn_height": filter.Height})
+	}
+	if filter.Address != "" {
+		q = q.LeftJoin(fmt.Sprintf("account_txs ON account_txs.atx_tx_hash = transactions.trn_hash")).
+			Where(squirrel.Eq{"account_txs.atx_account": filter.Address})
 	}
 	err = db.FindFirst(&total, q)
 	return total, err
