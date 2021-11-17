@@ -94,7 +94,6 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 		return state, fmt.Errorf("cmc.GetCurrencies: %s", err.Error())
 	}
 	for _, currency := range currencies {
-		fmt.Println(currency.Symbol)
 		if strings.ToLower(currency.Symbol) == config.Currency {
 			quote, ok := currency.Quote["USD"]
 			if !ok {
