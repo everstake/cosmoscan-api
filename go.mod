@@ -26,6 +26,7 @@ require (
 	github.com/rubenv/sql-migrate v0.0.0-20200429072036-ae26b214fa43
 	github.com/shopspring/decimal v1.2.0
 	github.com/spf13/viper v1.9.0 // indirect
+	github.com/superoo7/go-gecko v1.0.0 // indirect
 	github.com/tendermint/tendermint v0.34.14
 	github.com/urfave/negroni v1.0.0
 	go.uber.org/zap v1.19.1
