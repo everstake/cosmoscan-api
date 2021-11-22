@@ -37,6 +37,9 @@ type (
 	Clickhouse interface {
 		CreateBlocks(blocks []dmodels.Block) error
 		GetBlocks(filter filters.Blocks) (blocks []dmodels.Block, err error)
+		GetBlocksCount(filter filters.Blocks) (total uint64, err error)
+		GetTransactions(filter filters.Transactions) (items []dmodels.Transaction, err error)
+		GetTransactionsCount(filter filters.Transactions) (total uint64, err error)
 		GetAggBlocksCount(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggBlocksDelay(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAvgBlocksDelay(filter filters.TimeRange) (delay float64, err error)
@@ -88,6 +91,7 @@ type (
 		GetMissedBlocksCount(filter filters.MissedBlocks) (total uint64, err error)
 		GetValidatorDelegators(filter filters.ValidatorDelegators) (items []dmodels.ValidatorDelegator, err error)
 		GetValidatorDelegatorsTotal(filter filters.ValidatorDelegators) (total uint64, err error)
+		CreateAccountTxs(accountTxs []dmodels.AccountTx) error
 	}
 
 	Cache interface {

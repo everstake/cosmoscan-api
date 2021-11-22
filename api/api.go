@@ -128,6 +128,11 @@ func (api *API) loadRoutes() {
 		{Path: "/validator/{address}/blocks/stats", Method: http.MethodGet, Func: api.GetValidatorBlocksStat},
 		{Path: "/validator/{address}", Method: http.MethodGet, Func: api.GetValidator},
 		{Path: "/validator/{address}/delegators", Method: http.MethodGet, Func: api.GetValidatorDelegators},
+		{Path: "/blocks", Method: http.MethodGet, Func: api.GetBlocks},
+		{Path: "/block/{height}", Method: http.MethodGet, Func: api.GetBlock},
+		{Path: "/transactions", Method: http.MethodGet, Func: api.GetTransactions},
+		{Path: "/transaction/{hash}", Method: http.MethodGet, Func: api.GetTransaction},
+		{Path: "/account/{address}", Method: http.MethodGet, Func: api.GetAccount},
 	})
 
 }

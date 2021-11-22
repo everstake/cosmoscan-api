@@ -18,6 +18,8 @@ const (
 	PassedProposalStatus        = "PROPOSAL_STATUS_PASSED"
 	RejectedProposalStatus      = "PROPOSAL_STATUS_REJECTED"
 	FailedProposalStatus        = "PROPOSAL_STATUS_FAILED"
+
+	MainUnit = "uxprt"
 )
 
 var PrecisionDiv = decimal.New(1, precision)
@@ -69,6 +71,13 @@ type (
 			Denom  string          `json:"denom"`
 			Amount decimal.Decimal `json:"amount"`
 		} `json:"balances"`
+	}
+	DelegatorRewards struct {
+		Rewards []struct {
+			ValidatorAddress string   `json:"validator_address"`
+			Reward           []Amount `json:"reward"`
+		} `json:"rewards"`
+		Total []Amount `json:"total"`
 	}
 	StakingPool struct {
 		Pool struct {
@@ -158,6 +167,125 @@ type (
 			NoWithVeto int64 `json:"no_with_veto,string"`
 		} `json:"tally"`
 	}
+	Block struct {
+		BlockID struct {
+			Hash          string `json:"hash"`
+			PartSetHeader struct {
+				Total int    `json:"total"`
+				Hash  string `json:"hash"`
+			} `json:"part_set_header"`
+		} `json:"block_id"`
+		Block struct {
+			Header struct {
+				Version struct {
+					Block string `json:"block"`
+					App   string `json:"app"`
+				} `json:"version"`
+				ChainID     string    `json:"chain_id"`
+				Height      uint64    `json:"height,string"`
+				Time        time.Time `json:"time"`
+				LastBlockID struct {
+					Hash          string `json:"hash"`
+					PartSetHeader struct {
+						Total int    `json:"total"`
+						Hash  string `json:"hash"`
+					} `json:"part_set_header"`
+				} `json:"last_block_id"`
+				LastCommitHash     string `json:"last_commit_hash"`
+				DataHash           string `json:"data_hash"`
+				ValidatorsHash     string `json:"validators_hash"`
+				NextValidatorsHash string `json:"next_validators_hash"`
+				ConsensusHash      string `json:"consensus_hash"`
+				AppHash            string `json:"app_hash"`
+				LastResultsHash    string `json:"last_results_hash"`
+				EvidenceHash       string `json:"evidence_hash"`
+				ProposerAddress    string `json:"proposer_address"`
+			} `json:"header"`
+			Data struct {
+				Txs []string `json:"txs"`
+			} `json:"data"`
+		} `json:"block"`
+	}
+	TxResult struct {
+		Tx struct {
+			Type string `json:"@type"`
+			Body struct {
+				Messages         []json.RawMessage `json:"messages"`
+				Memo             string            `json:"memo"`
+				TimeoutHeight    string            `json:"timeout_height"`
+				ExtensionOptions []struct {
+					TypeURL string `json:"type_url"`
+					Value   string `json:"value"`
+				} `json:"extension_options"`
+				NonCriticalExtensionOptions []struct {
+					TypeURL string `json:"type_url"`
+					Value   string `json:"value"`
+				} `json:"non_critical_extension_options"`
+			} `json:"body"`
+			AuthInfo struct {
+				SignerInfos []struct {
+					PublicKey struct {
+						TypeURL string `json:"type_url"`
+						Value   string `json:"value"`
+					} `json:"public_key"`
+					ModeInfo struct {
+						Single struct {
+							Mode string `json:"mode"`
+						} `json:"single"`
+						Multi struct {
+							Bitarray struct {
+								ExtraBitsStored int    `json:"extra_bits_stored"`
+								Elems           string `json:"elems"`
+							} `json:"bitarray"`
+							ModeInfos []interface{} `json:"mode_infos"`
+						} `json:"multi"`
+					} `json:"mode_info"`
+					Sequence string `json:"sequence"`
+				} `json:"signer_infos"`
+				Fee struct {
+					Amount []struct {
+						Denom  string          `json:"denom"`
+						Amount decimal.Decimal `json:"amount"`
+					} `json:"amount"`
+					GasLimit decimal.Decimal `json:"gas_limit"`
+					Payer    string          `json:"payer"`
+					Granter  string          `json:"granter"`
+				} `json:"fee"`
+			} `json:"auth_info"`
+			Signatures []string `json:"signatures"`
+		} `json:"tx"`
+		TxResponse struct {
+			Height    uint64 `json:"height,string"`
+			Txhash    string `json:"txhash"`
+			Codespace string `json:"codespace"`
+			Code      int    `json:"code"`
+			Data      string `json:"data"`
+			RawLog    string `json:"raw_log"`
+			Logs      []struct {
+				MsgIndex int    `json:"msg_index"`
+				Log      string `json:"log"`
+				Events   []struct {
+					Type       string `json:"type"`
+					Attributes []struct {
+						Key   string `json:"key"`
+						Value string `json:"value"`
+					} `json:"attributes"`
+				} `json:"events"`
+			} `json:"logs"`
+			Info      string `json:"info"`
+			GasWanted uint64 `json:"gas_wanted,string"`
+			GasUsed   uint64 `json:"gas_used,string"`
+			Tx        struct {
+				TypeURL string `json:"type_url"`
+				Value   string `json:"value"`
+			} `json:"tx"`
+			Timestamp time.Time `json:"timestamp"`
+		} `json:"tx_response"`
+	}
+	Amount struct {
+		Denom  string          `json:"denom"`
+		Amount decimal.Decimal `json:"amount"`
+	}
 )
 
 func NewAPI(cfg config.Config) *API {
@@ -195,7 +323,7 @@ func (api API) GetCommunityPoolAmount() (amount decimal.Decimal, err error) {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	for _, p := range cp.Pool {
-		if p.Denom == "uxprt" {
+		if p.Denom == MainUnit {
 			amount = amount.Add(p.Amount)
 		}
 	}
@@ -222,7 +350,7 @@ func (api API) GetInflation() (amount decimal.Decimal, err error) {
 
 func (api API) GetTotalSupply() (amount decimal.Decimal, err error) {
 	var s Supply
-	err = api.request("/cosmos/bank/v1beta1/supply/uxprt", &s)
+	err = api.request(fmt.Sprintf("cosmos/bank/v1beta1/supply/%s", MainUnit), &s)
 	if err != nil {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
@@ -246,7 +374,29 @@ func (api API) GetBalance(address string) (amount decimal.Decimal, err error) {
 		return amount, fmt.Errorf("request: %s", err.Error())
 	}
 	for _, b := range result.Balances {
-		if b.Denom == "uxprt" {
+		if b.Denom == MainUnit {
+			amount = amount.Add(b.Amount)
+		}
+	}
+	return amount.Div(PrecisionDiv), nil
+}
+
+func (api API) GetBalances(address string) (result AmountResult, err error) {
+	err = api.request(fmt.Sprintf("cosmos/bank/v1beta1/balances/%s", address), &result)
+	if err != nil {
+		return result, fmt.Errorf("request: %s", err.Error())
+	}
+	return result, nil
+}
+
+func (api API) GetStakeRewards(address string) (amount decimal.Decimal, err error) {
+	var result DelegatorRewards
+	err = api.request(fmt.Sprintf("cosmos/distribution/v1beta1/delegators/%s/rewards", address), &result)
+	if err != nil {
+		return amount, fmt.Errorf("request: %s", err.Error())
+	}
+	for _, b := range result.Total {
+		if b.Denom == MainUnit {
 			amount = amount.Add(b.Amount)
 		}
 	}
@@ -304,4 +454,24 @@ func (api API) ProposalTallyResult(id uint64) (result ProposalTallyResult, err e
 		return result, fmt.Errorf("request: %s", err.Error())
 	}
 	return result, nil
+}
+
+func (api API) GetBlock(id uint64) (result Block, err error) {
+	err = api.request(fmt.Sprintf("/cosmos/base/tendermint/v1beta1/blocks/%d", id), &result)
+	if err != nil {
+		return result, fmt.Errorf("request: %s", err.Error())
+	}
+	return result, nil
+}
+
+func (api API) GetTransaction(hash string) (result TxResult, err error) {
+	err = api.request(fmt.Sprintf("/cosmos/tx/v1beta1/txs/%s", hash), &result)
+	if err != nil {
+		return result, fmt.Errorf("request: %s", err.Error())
+	}
+	return result, nil
+}
+
+func Precision(amount decimal.Decimal) decimal.Decimal {
+	return amount.Div(PrecisionDiv)
 }

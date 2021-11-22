@@ -29,7 +29,7 @@ func (db DB) GetActiveAccounts(filter filters.ActiveAccounts) (addresses []strin
 		if !filter.To.IsZero() {
 			q = q.Where(squirrel.LtOrEq{item.dateField: filter.To})
 		}
-		qs = append(qs , q)
+		qs = append(qs, q)
 	}
 
 	q := qs[0]
@@ -43,4 +43,21 @@ func (db DB) GetActiveAccounts(filter filters.ActiveAccounts) (addresses []strin
 
 	err = db.Find(&addresses, query)
 	return addresses, err
+}
+
+func (db DB) CreateAccountTxs(accountTxs []dmodels.AccountTx) error {
+	if len(accountTxs) == 0 {
+		return nil
+	}
+	q := squirrel.Insert(dmodels.AccountTxsTable).Columns("atx_account", "atx_tx_hash")
+	for _, acc := range accountTxs {
+		if acc.Account == "" {
+			return fmt.Errorf("field Account can not beempty")
+		}
+		if acc.TxHash == "" {
+			return fmt.Errorf("hash can not be empty")
+		}
+		q = q.Values(acc.Account, acc.TxHash)
+	}
+	return db.Insert(q)
 }

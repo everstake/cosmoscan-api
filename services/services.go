@@ -54,6 +54,11 @@ type (
 		GetAggBondedRatio(filter filters.Agg) (items []smodels.AggItem, err error)
 		GetAggUnbondingVolume(filter filters.Agg) (items []smodels.AggItem, err error)
 		Test() (state dmodels.HistoricalState, err error)
+		GetBlock(height uint64) (block smodels.Block, err error)
+		GetBlocks(filter filters.Blocks) (resp smodels.PaginatableResponse, err error)
+		GetTransaction(hash string) (tx smodels.Tx, err error)
+		GetTransactions(filter filters.Transactions) (resp smodels.PaginatableResponse, err error)
+		GetAccount(address string) (account smodels.Account, err error)
 	}
 	CryptoMarket interface {
 		GetMarketData() (price, volume24h decimal.Decimal, err error)
@@ -70,6 +75,10 @@ type (
 		GetProposals() (proposals node.ProposalsResult, err error)
 		GetDelegatorValidatorStake(delegator string, validator string) (amount decimal.Decimal, err error)
 		ProposalTallyResult(id uint64) (result node.ProposalTallyResult, err error)
+		GetBlock(id uint64) (result node.Block, err error)
+		GetTransaction(hash string) (result node.TxResult, err error)
+		GetBalances(address string) (result node.AmountResult, err error)
+		GetStakeRewards(address string) (amount decimal.Decimal, err error)
 	}
 
 	ServiceFacade struct {

@@ -8,12 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/everstake/cosmoscan-api/config"
 	"github.com/everstake/cosmoscan-api/dao"
 	"github.com/everstake/cosmoscan-api/dao/filters"
 	"github.com/everstake/cosmoscan-api/dmodels"
 	"github.com/everstake/cosmoscan-api/log"
 	"github.com/everstake/cosmoscan-api/services/helpers"
+	"github.com/everstake/cosmoscan-api/services/node"
 	"github.com/shopspring/decimal"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/libs/bytes"
@@ -26,7 +28,9 @@ import (
 
 const repeatDelay = time.Second * 5
 const ParserTitle = "hub3"
+const AddressLength = 45
 
+const batchTxs = 50
 const precision = 6
 
 var precisionDiv = decimal.New(1, precision)
@@ -62,6 +66,7 @@ type (
 		proposalDeposits []dmodels.ProposalDeposit
 		jailers          []dmodels.Jailer
 		missedBlocks     []dmodels.MissedBlock
+		accountTxs       []dmodels.AccountTx
 	}
 )
 
@@ -91,7 +96,7 @@ func (p *Parser) Run() error {
 	if model.Height == 0 {
 		err = p.parseGenesisState()
 		if err != nil {
-			return fmt.Errorf("parseGenesisState: %w", err)
+			return fmt.Errorf("parseGenesisState: %s", err.Error())
 		}
 		p.setAccounts()
 	}
@@ -202,9 +207,9 @@ func (p *Parser) runFetcher() {
 
 				success := tx.TxResponse.Code == 0
 
-				fee, err := calculateXprtAmount(tx.Tx.AuthInfo.Fee.Amount)
+				fee, err := calculateAtomAmount(tx.Tx.AuthInfo.Fee.Amount)
 				if err != nil {
-					log.Warn("Parser: height: %d, calculateXprtAmount: %s", tx.TxResponse.Height, err.Error())
+					log.Warn("Parser: height: %d, calculateAtomAmount: %s", tx.TxResponse.Height, err.Error())
 				}
 
 				if tx.TxResponse.Hash == "" {
@@ -224,6 +229,20 @@ func (p *Parser) runFetcher() {
 					GasWanted: tx.TxResponse.GasWanted,
 					CreatedAt: tx.TxResponse.Timestamp,
 				})
+
+				// account - transactions relations
+				accTxsMap := make(map[string]struct{})
+				for _, msg := range tx.Tx.Body.Messages {
+					for _, address := range fetchAddressesFromMessage(msg) {
+						accTxsMap[address] = struct{}{}
+					}
+				}
+				for address := range accTxsMap {
+					d.accountTxs = append(d.accountTxs, dmodels.AccountTx{
+						Account: address,
+						TxHash:  tx.TxResponse.Hash,
+					})
+				}
 
 				if success {
 					for i, msg := range tx.Tx.Body.Messages {
@@ -251,7 +270,7 @@ func (p *Parser) runFetcher() {
 						case WithdrawValidatorCommissionMsg:
 							err = d.parseWithdrawValidatorCommissionMsg(i, tx, msg)
 						case SubmitProposalMsg:
-							err = d.parseSubmitProposalMsg(tx, msg)
+							err = d.parseSubmitProposalMsg(i, tx, msg)
 						case DepositMsg:
 							err = d.parseDepositMsg(i, tx, msg)
 						case VoteMsg:
@@ -341,6 +360,7 @@ func (p *Parser) saving() {
 			singleData.proposalVotes = append(singleData.proposalVotes, item.proposalVotes...)
 			singleData.proposalDeposits = append(singleData.proposalDeposits, item.proposalDeposits...)
 			singleData.missedBlocks = append(singleData.missedBlocks, item.missedBlocks...)
+			singleData.accountTxs = append(singleData.accountTxs, item.accountTxs...)
 		}
 		p.wg.Add(1)
 		var err error
@@ -432,6 +452,14 @@ func (p *Parser) saving() {
 			log.Error("Parser: dao.CreateMissedBlocks: %s", err.Error())
 			<-time.After(repeatDelay)
 		}
+		for {
+			err = p.dao.CreateAccountTxs(singleData.accountTxs)
+			if err == nil {
+				break
+			}
+			log.Error("Parser: dao.CreateAccountTxs: %s", err.Error())
+			<-time.After(repeatDelay)
+		}
 		p.saveNewAccounts(singleData)
 		for {
 			model.Height += uint64(count)
@@ -508,7 +536,7 @@ func (d *data) parseMsgSend(index int, tx Tx, data []byte) (err error) {
 	}
 	currency, amount, err := calculateAmount(m.Amount)
 	if err != nil {
-		return fmt.Errorf("calculateXprtAmount: %s", err.Error())
+		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 	}
 	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
 	d.transfers = append(d.transfers, dmodels.Transfer{
@@ -533,7 +561,7 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 		id := makeHash(fmt.Sprintf("%s.%d.i.%d", tx.TxResponse.Hash, index, i))
 		currency, amount, err := calculateAmount(input.Coins)
 		if err != nil {
-			return fmt.Errorf("calculateXprtAmount: %s", err.Error())
+			return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
@@ -549,7 +577,7 @@ func (d *data) parseMultiSendMsg(index int, tx Tx, data []byte) (err error) {
 		id := makeHash(fmt.Sprintf("%s.%d.o.%d", tx.TxResponse.Hash, index, i))
 		currency, amount, err := calculateAmount(output.Coins)
 		if err != nil {
-			return fmt.Errorf("calculateXprtAmount: %s", err.Error())
+			return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 		}
 		d.transfers = append(d.transfers, dmodels.Transfer{
 			ID:        id,
@@ -647,8 +675,8 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 	}
 
 	mp := make(map[string]decimal.Decimal)
-	for _, Log := range tx.TxResponse.Logs {
-		for _, event := range Log.Events {
+	for _, log := range tx.TxResponse.Logs {
+		for _, event := range log.Events {
 			if event.Type == "withdraw_rewards" {
 				for i := 0; i < len(event.Attributes); i += 2 {
 					amount, err := strToAmount(event.Attributes[i].Value)
@@ -682,15 +710,15 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 	return nil
 }
 
-func (d *data) parseSubmitProposalMsg(tx Tx, data []byte) (err error) {
+func (d *data) parseSubmitProposalMsg(index int, tx Tx, data []byte) (err error) {
 	var m MsgSubmitProposal
 	err = json.Unmarshal(data, &m)
 	if err != nil {
 		return fmt.Errorf("json.Unmarshal: %s", err.Error())
 	}
 	var id uint64
-	for _, Log := range tx.TxResponse.Logs {
-		for _, event := range Log.Events {
+	for _, log := range tx.TxResponse.Logs {
+		for _, event := range log.Events {
 			if event.Type == "submit_proposal" {
 				for _, att := range event.Attributes {
 					if att.Key == "proposal_id" {
@@ -706,13 +734,13 @@ func (d *data) parseSubmitProposalMsg(tx Tx, data []byte) (err error) {
 	if id == 0 {
 		return fmt.Errorf("not found proposal_id")
 	}
-	amount, err := calculateXprtAmount(m.Content.Value.Amount)
+	amount, err := calculateAtomAmount(m.Content.Value.Amount)
 	if err != nil {
-		return fmt.Errorf("calculateXprtAmount: %s", err.Error())
+		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 	}
-	initDeposit, err := calculateXprtAmount(m.InitialDeposit)
+	initDeposit, err := calculateAtomAmount(m.InitialDeposit)
 	if err != nil {
-		return fmt.Errorf("calculateXprtAmount: %s", err.Error())
+		return fmt.Errorf("calculateAtomAmount: %s", err.Error())
 	}
 	d.proposals = append(d.proposals, dmodels.HistoryProposal{
 		ID:          id,
@@ -793,8 +821,8 @@ func (d *data) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte
 	}
 	var amount decimal.Decimal
 	found := false
-	for _, Log := range tx.TxResponse.Logs {
-		for _, event := range Log.Events {
+	for _, log := range tx.TxResponse.Logs {
+		for _, event := range log.Events {
 			if event.Type == "withdraw_commission" {
 				for _, att := range event.Attributes {
 					if att.Key == "amount" {
@@ -837,13 +865,13 @@ func (d *data) parseUnjailMsg(index int, tx Tx, data []byte) (err error) {
 	return nil
 }
 
-func calculateXprtAmount(amountItems []Amount) (decimal.Decimal, error) {
+func calculateAtomAmount(amountItems []Amount) (decimal.Decimal, error) {
 	volume := decimal.Zero
 	for _, item := range amountItems {
 		if item.Denom == "" && item.Amount.IsZero() { // example height=1245781
 			break
 		}
-		if item.Denom != "uxprt" {
+		if item.Denom != node.MainUnit {
 			return volume, fmt.Errorf("unknown demon (currency): %s", item.Denom)
 		}
 		volume = volume.Add(item.Amount)
@@ -866,9 +894,9 @@ func calculateAmount(amountItems []Amount) (string, decimal.Decimal, error) {
 		}
 		volume = volume.Add(item.Amount)
 	}
-	if lastCurrency == "uxprt" {
+	if lastCurrency == node.MainUnit {
 		volume = volume.Div(precisionDiv)
-		lastCurrency = "xprt"
+		lastCurrency = config.Currency
 	}
 	return lastCurrency, volume, nil
 }
@@ -877,7 +905,7 @@ func (a Amount) getAmount() (decimal.Decimal, error) {
 	if a.Denom == "" && a.Amount.IsZero() {
 		return decimal.Zero, nil
 	}
-	if a.Denom != "uxprt" {
+	if a.Denom != node.MainUnit {
 		return decimal.Zero, fmt.Errorf("unknown demon (currency): %s", a.Denom)
 	}
 	a.Amount = a.Amount.Div(precisionDiv)
@@ -888,7 +916,7 @@ func strToAmount(str string) (decimal.Decimal, error) {
 	if str == "" {
 		return decimal.Zero, nil
 	}
-	val := strings.TrimSuffix(str, "uxprt")
+	val := strings.TrimSuffix(str, node.MainUnit)
 	amount, err := decimal.NewFromString(val)
 	if err != nil {
 		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())
@@ -900,4 +928,25 @@ func strToAmount(str string) (decimal.Decimal, error) {
 func makeHash(str string) string {
 	hash := sha1.Sum([]byte(str))
 	return hex.EncodeToString(hash[:])
+}
+
+func fetchAddressesFromMessage(msg json.RawMessage) []string {
+	var obj map[string]interface{}
+	json.Unmarshal(msg, &obj)
+	return getAddresses(obj)
+}
+
+func getAddresses(v interface{}) []string {
+	var addresses []string
+	switch val := v.(type) {
+	case map[string]interface{}:
+		for _, vi := range val {
+			addresses = append(addresses, getAddresses(vi)...)
+		}
+	case string:
+		if len(val) == AddressLength && strings.HasPrefix(val, types.Bech32MainPrefix) {
+			addresses = append(addresses, val)
+		}
+	}
+	return addresses
 }

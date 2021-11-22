@@ -47,8 +47,9 @@ func (s ServiceFacade) KeepHistoricalState() {
 	}
 }
 
+
 func (s ServiceFacade) Test() (state dmodels.HistoricalState, err error) {
-	return s.makeState()
+	return  s.makeState()
 }
 
 func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
@@ -98,7 +99,7 @@ func (s ServiceFacade) makeState() (state dmodels.HistoricalState, err error) {
 
 	state.Price, state.TradingVolume, err = s.cm.GetMarketData()
 	if err != nil {
-		return state, fmt.Errorf("cmc.GetMarketData: %s", err.Error())
+		return state, fmt.Errorf("cm.GetMarketData: %s", err.Error())
 	}
 	state.MarketCap = state.CirculatingSupply.Mul(state.Price).Truncate(2)
 
