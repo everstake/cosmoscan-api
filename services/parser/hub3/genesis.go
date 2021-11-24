@@ -10,26 +10,23 @@ import (
 	"time"
 )
 
-const genesisJson = ""
+const genesisJson = "https://github.com/bitsongofficial/networks/raw/master/bitsong-2b/genesis.json"
 const saveGenesisBatch = 100
 
 type Genesis struct {
 	AppState struct {
-		Accounts []struct {
-			Address string   `json:"address"`
-			Coins   []Amount `json:"coins"`
-		} `json:"accounts"`
-		Distribution struct {
-			DelegatorStartingInfos []struct {
-				StartingInfo struct {
-					DelegatorAddress string `json:"delegator_address"`
-					StartingInfo     struct {
-						Stake decimal.Decimal `json:"stake"`
-					} `json:"starting_info"`
-					ValidatorAddress string `json:"validator_address"`
-				} `json:"starting_info"`
-			} `json:"delegator_starting_infos"`
-		} `json:"distribution"`
+		Auth struct {
+			Accounts []struct {
+				Type    string `json:"@type"`
+				Address string `json:"address"`
+			} `json:"accounts"`
+		} `json:"auth"`
+		Bank struct {
+			Balances []struct {
+				Address string   `json:"address"`
+				Coins   []Amount `json:"coins"`
+			} `json:"balances"`
+		} `json:"bank"`
 		Staking struct {
 			Delegations []struct {
 				DelegatorAddress string          `json:"delegator_address"`
@@ -138,11 +135,18 @@ func (p *Parser) parseGenesisState() error {
 	for _, delegation := range delegations {
 		accountDelegation[delegation.Delegator] = accountDelegation[delegation.Delegator].Add(delegation.Amount)
 	}
-	for _, account := range state.AppState.Accounts {
+	balances := make(map[string]decimal.Decimal)
+	for _, account := range state.AppState.Bank.Balances {
 		amount, _ := calculateMainAmount(account.Coins)
+		balances[account.Address] = amount
+	}
+	for _, account := range state.AppState.Auth.Accounts {
+		if account.Type != "/cosmos.auth.v1beta1.BaseAccount" {
+			continue
+		}
 		accounts = append(accounts, dmodels.Account{
 			Address:   account.Address,
-			Balance:   amount,
+			Balance:   balances[account.Address],
 			Stake:     accountDelegation[account.Address],
 			CreatedAt: t,
 		})

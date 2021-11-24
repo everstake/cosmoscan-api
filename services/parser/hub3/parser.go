@@ -93,13 +93,13 @@ func (p *Parser) Run() error {
 	for i := uint64(0); i < p.cfg.Parser.Fetchers; i++ {
 		go p.runFetcher()
 	}
-	//if model.Height == 0 {
-	//	err = p.parseGenesisState()
-	//	if err != nil {
-	//		return fmt.Errorf("parseGenesisState: %s", err.Error())
-	//	}
-	//	p.setAccounts()
-	//}
+	if model.Height == 2966150 {
+		err = p.parseGenesisState()
+		if err != nil {
+			return fmt.Errorf("parseGenesisState: %s", err.Error())
+		}
+		p.setAccounts()
+	}
 	go p.saving()
 	for {
 		latestBlock, err := p.api.GetLatestBlock()
