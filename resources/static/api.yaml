@@ -589,7 +589,7 @@ paths:
       parameters:
         - name: proposal_id
           in: query
-          required: false
+          required: true
           schema:
             type: number
         - name: voters

@@ -193,6 +193,9 @@ func (s *ServiceFacade) UpdateProposals() {
 }
 
 func (s *ServiceFacade) GetProposalVotes(filter filters.ProposalVotes) (items []smodels.ProposalVote, err error) {
+	// use limit after DB query
+	limit := filter.Limit
+	filter.Limit = 0
 	votes, err := s.dao.GetProposalVotes(filter)
 	if err != nil {
 		return nil, fmt.Errorf("dao.GetProposalVotes: %s", err.Error())
@@ -224,6 +227,11 @@ func (s *ServiceFacade) GetProposalVotes(filter filters.ProposalVotes) (items []
 			IsValidator:  isValidator,
 			ProposalVote: vote,
 		})
+	}
+	if limit > 0 {
+		if uint64(len(items)) > limit {
+			items = items[:limit]
+		}
 	}
 	return items, nil
 }

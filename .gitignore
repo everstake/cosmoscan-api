@@ -2,6 +2,7 @@
 vendor/**/
 cosmoscan-api
 config.json
+config.json.*
 backups
 ./clickhouse
 ./mysql

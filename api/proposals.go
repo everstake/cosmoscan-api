@@ -31,6 +31,11 @@ func (api *API) GetProposalVotes(w http.ResponseWriter, r *http.Request) {
 		jsonBadRequest(w, "")
 		return
 	}
+	if filter.ProposalID == 0 {
+		log.Debug("API GetProposalVotes: proposal_id necessary")
+		jsonBadRequest(w, "proposal_id necessary")
+		return
+	}
 	resp, err := api.svc.GetProposalVotes(filter)
 	if err != nil {
 		log.Error("API GetProposalVotes: svc.GetProposalVotes: %s", err.Error())
