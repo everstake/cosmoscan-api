@@ -33,6 +33,7 @@ func (m DB) CreateAccounts(accounts []dmodels.Account) error {
 			account.CreatedAt,
 		)
 	}
+	q = q.Suffix("ON DUPLICATE KEY UPDATE acc_address=acc_address")
 	_, err := m.insert(q)
 	return err
 }
