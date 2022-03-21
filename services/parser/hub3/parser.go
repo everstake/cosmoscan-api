@@ -898,6 +898,10 @@ func calculateAmount(amountItems []Amount) (string, decimal.Decimal, error) {
 	if lastCurrency == node.MainUnit {
 		volume = volume.Div(precisionDiv)
 		lastCurrency = config.Currency
+	} else {
+		if volume.GreaterThanOrEqual(decimal.New(1, 20)) {
+			volume = decimal.Zero
+		}
 	}
 	return lastCurrency, volume, nil
 }
