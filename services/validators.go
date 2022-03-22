@@ -275,11 +275,19 @@ func (s *ServiceFacade) GetFeeRanges() (items []smodels.FeeRange, err error) {
 			max = validator.Commission.CommissionRates.Rate
 		}
 	}
-	step := max.Sub(min).Div(decimal.NewFromInt(point))
+	step := max.Sub(min).Div(decimal.NewFromInt(50))
+	stepBig := max.Sub(min).Div(decimal.NewFromInt(10))
 	for i := int64(1); i <= point; i++ {
 		var validators []smodels.FeeRangeValidator
 		from := step.Mul(decimal.NewFromInt(i)).Sub(step)
 		to := step.Mul(decimal.NewFromInt(i))
+
+		if to.Equal(stepBig.Add(step)) {
+			step = stepBig
+			stepBig = decimal.Zero
+			i = 1
+			continue
+		}
 
 		for _, validator := range validatorsMap {
 			rate := validator.Commission.CommissionRates.Rate
