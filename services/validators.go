@@ -264,7 +264,6 @@ func (s *ServiceFacade) GetMostJailedValidators() (items []dmodels.ValidatorValu
 }
 
 func (s *ServiceFacade) GetFeeRanges() (items []smodels.FeeRange, err error) {
-	//point := int64(10)
 	point := int64(10)
 	min := decimal.Zero
 	max := decimal.Zero
