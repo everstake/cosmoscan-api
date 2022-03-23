@@ -107,6 +107,7 @@ func (p *Parser) Run() error {
 			log.Error("Parser: api.GetLatestBlock: %s", err.Error())
 			continue
 		}
+		latestBlock.Block.Header.Height -= 2
 		if model.Height >= latestBlock.Block.Header.Height {
 			<-time.After(time.Second)
 			continue
