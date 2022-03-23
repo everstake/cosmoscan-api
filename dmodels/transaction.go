@@ -16,4 +16,5 @@ type Transaction struct {
 	GasUsed   uint64          `db:"trn_gas_used"`
 	GasWanted uint64          `db:"trn_gas_wanted"`
 	CreatedAt time.Time       `db:"trn_created_at"`
+	BlockID   uint64		  `db:"trn_block_id"` 	
 }
