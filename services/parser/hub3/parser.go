@@ -923,7 +923,16 @@ func strToAmount(str string) (decimal.Decimal, error) {
 	val := strings.TrimSuffix(str, node.MainUnit)
 	amount, err := decimal.NewFromString(val)
 	if err != nil {
-		return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())
+		index := strings.LastIndex(val, ",")
+		if index == -1 {
+			return decimal.Zero, nil
+		} else {
+			val = val[index+1:]
+		}
+		amount, err = decimal.NewFromString(val)
+		if err != nil {
+			return amount, fmt.Errorf("decimal.NewFromString: %s", err.Error())
+		}
 	}
 	amount = amount.Div(precisionDiv)
 	return amount, nil
