@@ -90,7 +90,7 @@ func (p *Parser) Run() error {
 	if err != nil {
 		return fmt.Errorf("parser not found")
 	}
-	fmt.Printf("model = %v", model) //////////////////////
+	fmt.Printf("model = %v\n", model) ////////////////////////
 	for i := uint64(0); i < p.cfg.Parser.Fetchers; i++ {
 		go p.runFetcher()
 	}
@@ -104,7 +104,7 @@ func (p *Parser) Run() error {
 	go p.saving()
 	for {
 		latestBlock, err := p.api.GetLatestBlock()
-		fmt.Printf("latestBlock = %v", latestBlock.Block.Header.Height) /////////////////////////////
+		fmt.Printf("latestBlock = %v\n", latestBlock.Block.Header.Height) ////////////////////////////
 		if err != nil {
 			log.Error("Parser: api.GetLatestBlock: %s", err.Error())
 			continue
@@ -144,9 +144,9 @@ func (p *Parser) runFetcher() {
 		for {
 			var d data
 			d.height = height
-			fmt.Printf("before getBlock %d", height)
+			fmt.Printf("before getBlock %d\n", height) ////////////////////
 			block, err := p.api.GetBlock(height)
-			fmt.Printf("after getBlock %v", block)
+			fmt.Printf("after getBlock %v\n", block) ////////////////////
 			if err != nil {
 				log.Error("Parser: fetcher: api.GetBlock: %s", err.Error())
 				<-time.After(time.Second)
