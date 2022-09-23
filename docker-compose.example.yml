@@ -45,7 +45,7 @@ services:
     volumes:
       - ./mysql:/var/lib/mysql
     env_file:
-      - ./docker/.env:./.env
+      - .env
     environment:
       MYSQL_DATABASE: "${DB_NAME}"
       MYSQL_USER: "${DB_USER}"
