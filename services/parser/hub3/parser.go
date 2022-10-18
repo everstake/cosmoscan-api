@@ -680,6 +680,9 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 		for _, event := range log.Events {
 			if event.Type == "withdraw_rewards" {
 				for i := 0; i < len(event.Attributes); i += 2 {
+					if event.Attributes[i].Value == "0stake" {
+						continue
+					}
 					amount, err := strToAmount(event.Attributes[i].Value)
 					if err != nil {
 						return fmt.Errorf("strToAmount: %s", err.Error())
