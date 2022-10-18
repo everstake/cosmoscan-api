@@ -699,7 +699,7 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 
 	amount, ok := mp[m.ValidatorAddress]
 	if !ok {
-		return fmt.Errorf("not found validator %s in map", m.ValidatorAddress)
+		return nil //return fmt.Errorf("not found validator %s in map", m.ValidatorAddress)
 	}
 
 	id := makeHash(fmt.Sprintf("%s.%d", tx.TxResponse.Hash, index))
