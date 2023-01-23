@@ -683,9 +683,20 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 					if event.Attributes[i].Value == "0stake" {
 						continue
 					}
-					amount, err := strToAmount(event.Attributes[i].Value)
-					if err != nil {
-						return fmt.Errorf("strToAmount: %s", err.Error())
+					parts := strings.Split(event.Attributes[i].Value, ",")
+					amount := decimal.Decimal{}
+					if len(parts) == 2 {
+						amount, err = strToAmount(parts[1])
+						if err != nil {
+							return fmt.Errorf("strToAmount: %s", err.Error())
+						}
+					} else if len(parts) == 1 {
+						amount, err = strToAmount(parts[0])
+						if err != nil {
+							return fmt.Errorf("strToAmount: %s", err.Error())
+						}
+					} else {
+						return fmt.Errorf("parts: small length")
 					}
 					if event.Attributes[i+1].Key != "validator" {
 						return fmt.Errorf("not found validator in events")
@@ -830,10 +841,21 @@ func (d *data) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte
 			if event.Type == "withdraw_commission" {
 				for _, att := range event.Attributes {
 					if att.Key == "amount" {
-						amount, err = strToAmount(att.Value)
-						if err != nil {
-							return fmt.Errorf("strToAmount: %s", err.Error())
+						parts := strings.Split(att.Value, ",")
+						if len(parts) == 2 {
+							amount, err = strToAmount(parts[1])
+							if err != nil {
+								return fmt.Errorf("strToAmount: %s", err.Error())
+							}
+						} else if len(parts) == 1 {
+							amount, err = strToAmount(parts[0])
+							if err != nil {
+								return fmt.Errorf("strToAmount: %s", err.Error())
+							}
+						} else {
+							return fmt.Errorf("parts: small length")
 						}
+
 						found = true
 					}
 				}
