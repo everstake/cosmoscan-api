@@ -685,8 +685,8 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 					}
 					parts := strings.Split(event.Attributes[i].Value, ",")
 					amount := decimal.Decimal{}
-					if len(parts) == 2 {
-						amount, err = strToAmount(parts[1])
+					if len(parts) > 1 {
+						amount, err = strToAmount(parts[len(parts)-1])
 						if err != nil {
 							return fmt.Errorf("strToAmount: %s", err.Error())
 						}
@@ -842,8 +842,8 @@ func (d *data) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte
 				for _, att := range event.Attributes {
 					if att.Key == "amount" {
 						parts := strings.Split(att.Value, ",")
-						if len(parts) == 2 {
-							amount, err = strToAmount(parts[1])
+						if len(parts) > 1 {
+							amount, err = strToAmount(parts[len(parts)-1])
 							if err != nil {
 								return fmt.Errorf("strToAmount: %s", err.Error())
 							}
