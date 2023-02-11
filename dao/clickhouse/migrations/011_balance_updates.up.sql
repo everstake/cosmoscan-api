@@ -1,4 +1,4 @@
-create table balance_updates
+CREATE TABLE IF NOT EXISTS balance_updates
 (
     bau_id         FixedString(40),
     bau_address    FixedString(45),

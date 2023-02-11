@@ -1,4 +1,4 @@
-create table jailers
+CREATE TABLE IF NOT EXISTS jailers
 (
     jlr_id         FixedString(40),
     jlr_address    String,

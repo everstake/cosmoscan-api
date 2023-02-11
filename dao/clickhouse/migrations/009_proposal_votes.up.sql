@@ -1,4 +1,4 @@
-create table proposal_votes
+CREATE TABLE IF NOT EXISTS proposal_votes
 (
     prv_id          FixedString(40),
     prv_proposal_id UInt64,

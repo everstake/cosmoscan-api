@@ -1,4 +1,4 @@
-create table stats
+CREATE TABLE IF NOT EXISTS stats
 (
     stt_id         FixedString(42),
     stt_title      String,

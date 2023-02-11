@@ -1,4 +1,4 @@
-create table proposal_deposits
+CREATE TABLE IF NOT EXISTS proposal_deposits
 (
     prd_id          FixedString(40),
     prd_proposal_id UInt64,

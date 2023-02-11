@@ -1,4 +1,4 @@
-create table delegator_rewards
+CREATE TABLE IF NOT EXISTS delegator_rewards
 (
     der_id         FixedString(40),
     der_tx_hash    FixedString(64),

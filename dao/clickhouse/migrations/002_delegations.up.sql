@@ -1,4 +1,4 @@
-create table delegations
+CREATE TABLE IF NOT EXISTS delegations
 (
     dlg_id         FixedString(40),
     dlg_tx_hash    FixedString(64),

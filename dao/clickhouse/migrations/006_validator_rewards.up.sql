@@ -1,4 +1,4 @@
-create table validator_rewards
+CREATE TABLE IF NOT EXISTS validator_rewards
 (
     var_id         FixedString(40),
     var_tx_hash    FixedString(64),

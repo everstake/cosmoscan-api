@@ -1,4 +1,4 @@
-create table historical_states
+CREATE TABLE IF NOT EXISTS historical_states
 (
     his_price              Decimal(18, 8) default 0,
     his_market_cap         Decimal(18, 2) default 0,

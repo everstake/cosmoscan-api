@@ -1,4 +1,4 @@
-create table missed_blocks
+CREATE TABLE IF NOT EXISTS missed_blocks
 (
     mib_id          FixedString(40),
     mib_height      UInt64,

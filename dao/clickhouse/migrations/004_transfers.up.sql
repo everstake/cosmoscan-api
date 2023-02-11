@@ -1,4 +1,4 @@
-create table transfers
+CREATE TABLE IF NOT EXISTS transfers
 (
     trf_id         FixedString(40),
     trf_tx_hash    FixedString(64),

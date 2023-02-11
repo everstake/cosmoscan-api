@@ -1,4 +1,4 @@
-create table transactions
+CREATE TABLE IF NOT EXISTS transactions
 (
     trn_hash       FixedString(64),
     trn_block_id   UInt64,

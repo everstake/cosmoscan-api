@@ -1,4 +1,4 @@
-create table history_proposals
+CREATE TABLE IF NOT EXISTS history_proposals
 (
     hpr_id           UInt64,
     hpr_tx_hash      String,
