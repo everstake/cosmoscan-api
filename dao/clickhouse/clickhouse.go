@@ -12,6 +12,7 @@ import (
 	_ "github.com/mailru/go-clickhouse"
 	"strings"
 )
+
 const migrationsPath = "./dao/clickhouse/migrations"
 
 type DB struct {
@@ -23,10 +24,10 @@ func NewDB(cfg config.Clickhouse) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can`t make connection: %s", err.Error())
 	}
-	err = makeMigration(conn, migrationsPath, cfg.Database)
-	if err != nil {
-		return nil, fmt.Errorf("can`t make makeMigration: %s", err.Error())
-	}
+	//err = makeMigration(conn, migrationsPath, cfg.Database)
+	//if err != nil {
+	//	return nil, fmt.Errorf("can`t make makeMigration: %s", err.Error())
+	//}
 	return &DB{
 		conn: sqlx.NewDb(conn, "clickhouse"),
 	}, nil
