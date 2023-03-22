@@ -682,13 +682,8 @@ func (d *data) parseWithdrawDelegationRewardMsg(index int, tx Tx, data []byte) (
 				for i := 0; i < len(event.Attributes); i += 2 {
 					parts := strings.Split(event.Attributes[i].Value, ",")
 					amount := decimal.Decimal{}
-					if len(parts) > 1 {
+					if len(parts) > 0 {
 						amount, err = strToAmount(parts[len(parts)-1])
-						if err != nil {
-							return fmt.Errorf("strToAmount: %s", err.Error())
-						}
-					} else if len(parts) == 1 {
-						amount, err = strToAmount(parts[0])
 						if err != nil {
 							return fmt.Errorf("strToAmount: %s", err.Error())
 						}
@@ -838,9 +833,14 @@ func (d *data) parseWithdrawValidatorCommissionMsg(index int, tx Tx, data []byte
 			if event.Type == "withdraw_commission" {
 				for _, att := range event.Attributes {
 					if att.Key == "amount" {
-						amount, err = strToAmount(att.Value)
-						if err != nil {
-							return fmt.Errorf("strToAmount: %s", err.Error())
+						parts := strings.Split(att.Value, ",")
+						if len(parts) > 0 {
+							amount, err = strToAmount(parts[len(parts)-1])
+							if err != nil {
+								return fmt.Errorf("strToAmount: %s", err.Error())
+							}
+						} else {
+							return fmt.Errorf("parts: small length")
 						}
 						found = true
 					}
