@@ -14,6 +14,7 @@ func (api *API) GetProposals(w http.ResponseWriter, r *http.Request) {
 		jsonBadRequest(w, "")
 		return
 	}
+
 	resp, err := api.svc.GetProposals(filter)
 	if err != nil {
 		log.Error("API GetProposals: svc.GetProposals: %s", err.Error())
